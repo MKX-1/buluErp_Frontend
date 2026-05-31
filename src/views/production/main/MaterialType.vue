@@ -41,7 +41,7 @@ const newFormData = ref([
       label: '色粉重量',
       key: 'colorWeight',
       width: 8,
-      rules: [requiredRule],
+      // rules: [requiredRule],
     },
     { type: 'input', label: '名称', key: 'name', width: 8, rules: [requiredRule] }
   ]])
@@ -60,7 +60,7 @@ const editFormData = ref([
       label: '色粉重量',
       key: 'colorWeight',
       width: 12,
-      rules: [requiredRule],
+      // rules: [requiredRule],
     }
   ]])
 const newSubmit = ref({
@@ -102,7 +102,7 @@ const operation = ref([
   // {
   //   func: (id) => {
   //     detailCustomer(id).then((res) => {
-  //        
+  //
   //     })
   //   },
   //   value: '查看',
