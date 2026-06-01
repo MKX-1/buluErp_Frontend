@@ -45,30 +45,30 @@ export function importProductFile(formData) {
 }
 
 export function updateProduct(data) {
-  const formData = new FormData()
+  const formData = new FormData();
 
-  formData.append('id', String(data.id))
+  formData.append('id', String(data.id));
+  formData.append('name', data.name);
+  formData.append('designStatus', String(data.designStatus));
 
-  if (data.name !== undefined && data.name !== null) {
-    formData.append('name', data.name)
-  }
-
-  if (data.materialId !== undefined && data.materialId !== null && String(data.materialId).trim() !== '') {
-    formData.append('materialId', String(data.materialId))
-  }
-
-  formData.append('deletePicture', String(data.deletePicture === 1 ? 1 : 0))
+  // 默认 deletePicture = 0，除非明确要求删除
+  formData.append('deletePicture', String(data.deletePicture === 1 ? 1 : 0));
 
   if (data.picture instanceof File) {
-    formData.append('picture', data.picture)
+    formData.append('picture', data.picture);
   }
 
   return httpInstance({
     url: 'system/products',
     method: 'put',
     data: formData,
-  })
+    headers: {
+      'Content-Type': 'multipart/form-data',
+    },
+  });
 }
+
+
 
 
 export function getProductTemplate() {
