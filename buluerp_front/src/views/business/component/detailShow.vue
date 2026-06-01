@@ -204,12 +204,13 @@ const viewProductsSchedule = (row: any) => {
   props.addTab(
     `订单${props.orderCode} 布产`,
     'ProductionSchedule',
-    { orderCode: props.orderCode },
+    {
+      orderCode: props.orderCode,
+      productId: props.detail.productId,
+    },
     `/business/ProductionSchedule/${props.orderCode}`,
-
   )
 }
-
 // handleAction: 处理关联订单的操作
 const handleAction = (method: Function, row: any) => {
   method(row)

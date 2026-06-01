@@ -30,7 +30,7 @@
       <i class="el-icon-upload"></i>
       <div class="el-upload__text">将文件拖到此处，或 <em>点击上传</em></div>
       <template v-slot:tip>
-        <div class="el-upload__tip">只能上传 xls/xlsx 文件，大小不超过 5MB</div>
+        <div class="el-upload__tip">只能上传 xls/xlsx 文件，大小不超过 500MB</div>
       </template>
     </el-upload>
   </el-dialog>
@@ -198,13 +198,13 @@ const beforeUpload = (file: File) => {
   const isExcel =
     file.type === 'application/vnd.ms-excel' ||
     file.type === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-  const isLt5M = file.size / 1024 / 1024 < 5
+  const isLt500M = file.size / 1024 / 1024 <= 500
   if (!isExcel) {
     messageBox('error', null, null, '只能上传 xls/xlsx 文件')
     return false
   }
-  if (!isLt5M) {
-    messageBox('error', null, null, '文件大小不能超过 5MB')
+  if (!isLt500M) {
+    messageBox('error', null, null, '文件大小不能超过 500MB')
     return false
   }
   return true

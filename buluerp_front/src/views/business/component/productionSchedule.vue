@@ -12,6 +12,7 @@ import {
   downLoadModule,
   finishSchedule,
   selectTransToArrange,
+  newScheduleFromProduct,
 } from '@/apis/produceControl/produce/schedule'
 import { downloadBinaryFile } from '@/utils/file/base64'
 import TableList from '@/components/table/TableList.vue'
@@ -146,6 +147,61 @@ const newFormData = ref([
 const newSubmit = ref({
 
 })
+const productFormData = ref([
+  [
+    {
+      type: 'input',
+      label: '产品ID',
+      key: 'productId',
+      width: 8,
+      rules: [requiredRule],
+    },
+    {
+      type: 'input',
+      label: '订单编号',
+      key: 'orderCode',
+      width: 8,
+      rules: [requiredRule],
+    },
+    {
+      type: 'input',
+      label: '布产数量',
+      key: 'quantity',
+      width: 8,
+      rules: [requiredRule, positiveNumberRule],
+    },
+  ],
+  [
+    {
+      type: 'timer',
+      label: '布产时间',
+      key: 'productionTime',
+      timerType: 'date',
+      width: 8,
+      rules: [requiredRule],
+    },
+    {
+      type: 'timer',
+      label: '出货时间',
+      key: 'shipmentTime',
+      timerType: 'date',
+      width: 8,
+    },
+    {
+      type: 'input',
+      label: '供应商',
+      key: 'supplier',
+      width: 8,
+    },
+  ],
+])
+
+const productSubmit = ref({})
+
+const createProductFormRef = ref()
+
+const productDialogVisible = ref(false)
+
 
 const editFormData = ref([
   [
@@ -409,7 +465,32 @@ const handleSubmit = () => {
     })
   }
 }
+const handleSubmitFromProduct = () => {
+  createProductFormRef.value.validateForm((valid) => {
+    if (valid) {
+      const submitData = {
+        productId: Number(productSubmit.value.productId),
+        orderCode: productSubmit.value.orderCode,
+        quantity: Number(productSubmit.value.quantity),
+        productionTime: parseTime(productSubmit.value.productionTime, '{y}-{m}-{d}'),
+        shipmentTime: productSubmit.value.shipmentTime
+          ? parseTime(productSubmit.value.shipmentTime, '{y}-{m}-{d}')
+          : undefined,
+        supplier: productSubmit.value.supplier,
+      }
 
+      newScheduleFromProduct(submitData).then((res) => {
+        page.value = 1
+        listSchedule(page.value, pageSize.value).then((res) => {
+          listData.value = res.rows
+          total.value = res.total
+        })
+        ElMessage.success(res.msg)
+        productDialogVisible.value = false
+      })
+    }
+  })
+}
 //传给form组件的参数
 const resetnewSubmit = () => {
   newSubmit.value = {
@@ -424,7 +505,24 @@ const onCreate = () => {
     createNewFormRef.value.clearValidate()
   })
 }
+const resetProductSubmit = () => {
+  productSubmit.value = {
+    productId: '',
+    orderCode: '',
+    quantity: '',
+    productionTime: '',
+    shipmentTime: '',
+    supplier: '',
+  }
+}
 
+const onCreateFromProduct = () => {
+  resetProductSubmit()
+  productDialogVisible.value = true
+  nextTick(() => {
+    createProductFormRef.value?.clearValidate()
+  })
+}
 const onSubmit = () => {
   page.value = 1
   searchContent.value.productionTime = parseTime(searchContent.value.productionTime, '{y}-{m}-{d}')
@@ -579,8 +677,19 @@ listSchedule(page.value, pageSize.value).then((res) => {
   <div class="col">
     <BordShow content="布产表" path="订单详情/布产表" />
     <div class="greyBack">
-      <FormSearch title="查询" :data="formData" :onCreate="onCreate" :onSubmit="onSubmit" :onImport="onImport"
-        :onDownloadTemplate="onDownloadTemplate" :searchForm="searchContent" />
+  <FormSearch
+  title="查询"
+  :data="formData"
+  :onCreate="onCreate"
+  :onSubmit="onSubmit"
+  :onImport="onImport"
+  :onDownloadTemplate="onDownloadTemplate"
+  :searchForm="searchContent"
+>
+  <el-button type="success" @click="onCreateFromProduct">
+    从产品生成布产
+  </el-button>
+</FormSearch>
       <TableList :tableData="tableData" :operations="operation" :listData="listData" :DeleteFunc="DeleteFunc"
         :exportFunc="exportFunc" :transToArrange="transToArrange">
         <slot>
@@ -629,6 +738,24 @@ listSchedule(page.value, pageSize.value).then((res) => {
         </div>
       </template>
     </el-dialog>
+  <el-dialog v-model="productDialogVisible" title="从产品生成布产" width="800px">
+  <CreateForm
+    :data="productFormData"
+    :Formvalue="productSubmit"
+    ref="createProductFormRef"
+  />
+
+  <template #footer>
+    <div class="dialog-footer">
+      <el-button type="primary" @click="handleSubmitFromProduct">
+        确认
+      </el-button>
+      <el-button type="info" @click="productDialogVisible = false">
+        取消
+      </el-button>
+    </div>
+  </template>
+</el-dialog>
     <el-dialog v-model="transDialogVisible" title="导入排产" width="800px">
       <CreateForm :data="transFormData" :Formvalue="transSubmit" ref="createTransFormRef" />
       <template #footer>
@@ -650,7 +777,7 @@ listSchedule(page.value, pageSize.value).then((res) => {
         <i class="el-icon-upload"></i>
         <div class="el-upload__text">将文件拖到此处，或 <em>点击上传</em></div>
         <template v-slot:tip>
-          <div class="el-upload__tip">只能上传 xls/xlsx 文件，大小不超过 5MB</div>
+          <div class="el-upload__tip">只能上传 xls/xlsx 文件，大小不超过 500MB</div>
         </template>
       </el-upload>
     </el-dialog>

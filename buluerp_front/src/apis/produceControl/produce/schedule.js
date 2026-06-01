@@ -125,3 +125,14 @@ export function selectTransToArrange(data) {
     },
   })
 }
+export function newScheduleFromProduct(data) {
+  return httpInstance({
+    url: `system/products-schedule/from-product`,
+    method: 'post',
+    headers: {
+      ...headers,
+      'Content-Type': 'application/json',
+    },
+    data: data,
+  })
+}

@@ -22,6 +22,9 @@
       <el-form-item label="外部编号" prop="outerId">
         <el-input v-model="createForm.outerId" placeholder="请输入外部编号" />
       </el-form-item>
+      <el-form-item label="绑定物料ID" prop="materialId">
+        <el-input v-model="createForm.materialId" placeholder="请输入要绑定的物料ID，可不填" />
+      </el-form-item>
       <el-form-item label="产品图片" prop="image">
         <el-upload class="avatar-uploader" :show-file-list="false" :before-upload="beforeImageUpload">
           <div class="upload-box">
@@ -49,7 +52,7 @@
       <i class="el-icon-upload"></i>
       <div class="el-upload__text">将文件拖到此处，或 <em>点击上传</em></div>
       <template v-slot:tip>
-        <div class="el-upload__tip">只能上传 xls/xlsx 文件，大小不超过 5MB</div>
+        <div class="el-upload__tip">只能上传 xls/xlsx 文件，大小不超过 500MB</div>
       </template>
     </el-upload>
   </el-dialog>
@@ -132,15 +135,25 @@ const createForm = reactive({
   name: '',
   innerId: '',
   outerId: '',
+  materialId: '',
   image: '',
 })
 
 const createFormRef = ref<FormInstance>()
 const createFormRules = {
-  name: [{ required: true, message: '请输入产品名称', trigger: 'blur' }],
-  innerId: [{ required: true, message: '请输入内部编号', trigger: 'blur' }],
-  outerId: [{ required: true, message: '请输入外部编号', trigger: 'blur' }],
-  image: [{ required: true, message: '请上传产品图片', trigger: 'change' }],
+  name: [
+    { required: true, whitespace: true, message: '请输入产品名称', trigger: 'blur' },
+  ],
+  innerId: [
+    { required: true, whitespace: true, message: '请输入内部编号', trigger: 'blur' },
+  ],
+  outerId: [
+    { required: true, whitespace: true, message: '请输入外部编号', trigger: 'blur' },
+  ],
+  materialId: [
+    { required: true, whitespace: true, message: '请输入绑定物料ID', trigger: 'blur' },
+    { pattern: /^\d+$/, message: '物料ID必须为数字', trigger: 'blur' },
+  ],
 }
 
 const imageFile = ref<File | null>(null)
@@ -176,16 +189,18 @@ const handleCreateSubmit = async () => {
   const valid = await createFormRef.value?.validate().catch(() => false)
   if (!valid) return
 
-  if (!imageFile.value) {
-    messageBox('error', () => Promise.reject(), '', '请上传产品图片', '')
-    return
-  }
-
   const formData = new FormData()
   formData.append('name', createForm.name)
-  formData.append('picture', imageFile.value)
   formData.append('innerId', createForm.innerId)
   formData.append('outerId', createForm.outerId)
+
+  if (String(createForm.materialId).trim() !== '') {
+    formData.append('materialId', String(createForm.materialId).trim())
+  }
+
+  if (imageFile.value) {
+    formData.append('picture', imageFile.value)
+  }
 
   messageBox(
     'warning',
@@ -207,6 +222,7 @@ const resetCreateForm = () => {
   createForm.image = ''
   createForm.outerId = ''
   createForm.innerId = ''
+  createForm.materialId = ''
   imageFile.value = null
   createFormRef.value?.clearValidate?.()
 }
@@ -215,14 +231,14 @@ const beforeUpload = (file: File) => {
   const isExcel =
     file.type === 'application/vnd.ms-excel' ||
     file.type === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-  const isLt5M = file.size / 1024 / 1024 < 5
+  const isLt500M = file.size / 1024 / 1024 <= 500
 
   if (!isExcel) {
     messageBox('error', () => Promise.reject(), '', '只能上传 Excel 文件（xls/xlsx）', '')
     return false
   }
-  if (!isLt5M) {
-    messageBox('error', () => Promise.reject(), '', '文件大小不能超过 5MB', '')
+  if (!isLt500M) {
+    messageBox('error', () => Promise.reject(), '', '文件大小不能超过 500MB', '')
     return false
   }
   return true

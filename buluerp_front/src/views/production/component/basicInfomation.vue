@@ -139,10 +139,6 @@ const submitMainForm = async () => {
     const payload: any = {
       id: Number(props.detail?.id),
       name: mainFormState.productName,
-      orderId: mainFormState.orderId,
-      designStatus: Number(mainFormState.designStatus),
-      innerId: mainFormState.innerId,
-      outerId: mainFormState.outerId,
       deletePicture: 0, // 默认保留图片
     }
 
@@ -277,7 +273,6 @@ interface MaterialItem {
         <el-table-column prop="mouldNumber" label="模具编号" />
         <el-table-column prop="lddNumber" label="LDD编号" />
         <el-table-column prop="mouldCategory" label="模具分类" />
-        <el-table-column prop="materialId" label="物料ID" />
         <el-table-column prop="pictureUrl" label="图片">
           <template #default="scope">
             <el-image :src="getFullImageUrl(scope.row.pictureUrl)" style="width: 80px; height: 80px;" />

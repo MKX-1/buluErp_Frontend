@@ -41,7 +41,6 @@ const newFormData = ref([
       label: '色粉重量',
       key: 'colorWeight',
       width: 8,
-      rules: [requiredRule],
     },
     { type: 'input', label: '名称', key: 'name', width: 8, rules: [requiredRule] }
   ]])
@@ -60,7 +59,6 @@ const editFormData = ref([
       label: '色粉重量',
       key: 'colorWeight',
       width: 12,
-      rules: [requiredRule],
     }
   ]])
 const newSubmit = ref({
@@ -339,7 +337,7 @@ listMaterialInfo(page.value, pageSize.value).then((res) => {
         <i class="el-icon-upload"></i>
         <div class="el-upload__text">将文件拖到此处，或 <em>点击上传</em></div>
         <template v-slot:tip>
-          <div class="el-upload__tip">只能上传 xls/xlsx 文件，大小不超过 5MB</div>
+          <div class="el-upload__tip">只能上传 xls/xlsx 文件，大小不超过 500MB</div>
         </template>
       </el-upload>
     </el-dialog>

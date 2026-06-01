@@ -99,7 +99,7 @@
         <i class="el-icon-upload"></i>
         <div class="el-upload__text">将文件拖到此处，或 <em>点击上传</em></div>
         <template #tip>
-          <div class="el-upload__tip">只能上传 xls/xlsx 文件，大小不超过 5MB</div>
+          <div class="el-upload__tip">只能上传 xls/xlsx 文件，大小不超过 500MB</div>
         </template>
       </el-upload>
     </el-dialog>
@@ -115,7 +115,7 @@
         <i class="el-icon-upload"></i>
         <div class="el-upload__text">将文件拖到此处，或 <em>点击上传</em></div>
         <template #tip>
-          <div class="el-upload__tip">只能上传 xls/xlsx 文件，大小不超过 5MB</div>
+          <div class="el-upload__tip">只能上传 xls/xlsx 文件，大小不超过 500MB</div>
         </template>
       </el-upload>
     </el-dialog>
