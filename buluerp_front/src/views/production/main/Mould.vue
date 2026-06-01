@@ -194,6 +194,7 @@ const onCreate = () => {
         key: 'manufacturerName',
         width: 8,
         rules: [requiredRule],
+        allowCreate: true,
         showKey: [
           { key: 'id', label: '厂商编号' },
           { key: 'name', label: '厂商名称' },

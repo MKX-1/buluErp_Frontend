@@ -59,6 +59,7 @@
             filterable
             remote
             reserve-keyword
+            :allow-create="!!ele.allowCreate"
             :remote-method="
               (queryString) => {
                 ele.remoteFunc(ele, queryString)

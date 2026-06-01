@@ -8,17 +8,26 @@ export function getMouldList(params) {
   })
 }
 
+// export function createMould(data) {
+//   return httpInstance({
+//     url: 'system/mould',
+//     method: 'post',
+//     data, // 直接传 JSON 对象
+//     headers: {
+//       'Content-Type': 'application/json' // 使用 JSON
+//     }
+//   })
+// }
 export function createMould(data) {
   return httpInstance({
-    url: 'system/mould',
+    url: 'system/mould/with-manufacturer',
     method: 'post',
-    data, // 直接传 JSON 对象
+    data,
     headers: {
-      'Content-Type': 'application/json' // 使用 JSON
+      'Content-Type': 'application/json'
     }
   })
 }
-
 export function deleteMould(ids) {
   var idsParam = Array.isArray(ids) ? ids.join(',') : ids
   return httpInstance({
@@ -43,9 +52,20 @@ export function getMouldDetail(id) {
   })
 }
 
+// export function importMouldFile(formData) {
+//   return httpInstance({
+//     url: '/system/mould/import',
+//     method: 'post',
+//     data: formData,
+//     headers: {
+//       'Content-Type': 'multipart/form-data'
+//     }
+//   })
+// }
+
 export function importMouldFile(formData) {
   return httpInstance({
-    url: '/system/mould/import',
+    url: '/system/mould/import/with-manufacturer',
     method: 'post',
     data: formData,
     headers: {
@@ -53,7 +73,6 @@ export function importMouldFile(formData) {
     }
   })
 }
-
 export function getMouldTemplate() {
   return httpInstance({
     url: 'system/mould/export/template',
