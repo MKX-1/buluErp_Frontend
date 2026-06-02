@@ -23,7 +23,7 @@
         <el-input v-model="createForm.outerId" placeholder="请输入外部编号" />
       </el-form-item>
       <el-form-item label="绑定物料ID" prop="materialId">
-        <el-input v-model="createForm.materialId" placeholder="请输入要绑定的物料ID，可不填" />
+        <el-input v-model="createForm.materialId" placeholder="请输入要绑定的物料ID" />
       </el-form-item>
       <el-form-item label="产品图片" prop="image">
         <el-upload class="avatar-uploader" :show-file-list="false" :before-upload="beforeImageUpload">
