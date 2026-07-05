@@ -14,7 +14,7 @@ import {
 } from '@/apis/produceControl/purchase/purchasePlan'
 import { downloadBinaryFile } from '@/utils/file/base64'
 import TableList from '@/components/table/TableList.vue'
-import { ref, nextTick } from 'vue'
+import { ref, nextTick, computed } from 'vue'
 import { parseTime } from '@/utils/ruoyi'
 import { beforeUpload } from '@/utils/file/importExcel'
 import { messageBox } from '@/components/message/messageBox'
@@ -23,6 +23,7 @@ import { requiredRule, positiveNumberRule } from '@/utils/form/valid'
 const props = defineProps(['data'])
 //渲染页面
 const listPurchasePlan = listPurchasePlanByOrderCode(props.data.orderCode)
+const purchaseConfirmText = computed(() => listData.value.length > 0 ? '采购确认完成' : '无需采购')
 const formData = ref([
   [
     { type: 'input', label: '操作人', key: 'operator' },
@@ -258,12 +259,26 @@ const operation = ref([
   {
     func: (row) => {
       finishPurchasePlan({ orderCode: row.orderCode }).then((res) => {
+        listPurchasePlan(page.value, pageSize.value).then((res) => {
+          listData.value = res.rows
+          total.value = res.total
+        })
         ElMessage.success(res.msg)
       })
     },
     value: '完成采购',
   },
 ])
+
+const onFinishPurchase = () => {
+  finishPurchasePlan({ orderCode: props.data.orderCode }).then((res) => {
+    listPurchasePlan(page.value, pageSize.value).then((res) => {
+      listData.value = res.rows
+      total.value = res.total
+    })
+    ElMessage.success(res.msg)
+  })
+}
 
 //新增与修改
 const importDialogVisible = ref(false)
@@ -435,6 +450,9 @@ listPurchasePlan(page.value, pageSize.value).then((res) => {
     <div class="greyBack">
       <FormSearch title="查询" :data="formData" :onCreate="onCreate" :onSubmit="onSubmit" :onImport="onImport"
         :onDownloadTemplate="onDownloadTemplate" :searchForm="searchContent" />
+      <div style="display: flex; justify-content: flex-end; margin: 12px 0;">
+        <el-button type="primary" @click="onFinishPurchase">{{ purchaseConfirmText }}</el-button>
+      </div>
       <TableList :tableData="tableData" :operations="operation" :listData="listData" :DeleteFunc="DeleteFunc"
         :exportFunc="exportFunc">
         <slot>

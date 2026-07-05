@@ -3,7 +3,7 @@ import { ElMessage, ElLoading, ElMessageBox } from 'element-plus'
 import router from '@/router'
 import { tansParams, blobValidate } from '@/utils/ruoyi'
 const httpInstance = axios.create({
-  baseURL: 'http://154.201.77.135:8080/',
+  baseURL: '/dev-api/',
   timeout: 5000,
 })
 

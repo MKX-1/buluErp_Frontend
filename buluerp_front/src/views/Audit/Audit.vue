@@ -108,7 +108,8 @@ onMounted(async () => {
   if (!token) {
     return;
   }
-  ws = new WebSocket(`ws://154.201.77.135:8080/websocket/${token}`)
+  const wsProtocol = window.location.protocol === 'https:' ? 'wss' : 'ws'
+  ws = new WebSocket(`${wsProtocol}://${window.location.host}/dev-api/websocket/${token}`)
 
 })
 

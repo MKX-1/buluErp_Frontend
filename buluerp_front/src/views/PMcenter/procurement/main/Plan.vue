@@ -263,7 +263,10 @@ const operation = ref([
   {
     func: (row) => {
       finishPurchasePlan({ orderCode: row.orderCode }).then((res) => {
-
+        listPurchasePlan(page.value, pageSize.value).then((res) => {
+          listData.value = res.rows
+          total.value = res.total
+        })
         ElMessage.success(res.msg)
       })
     },
