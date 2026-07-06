@@ -7,6 +7,8 @@ export interface TableDataType {
   status: Status
   customerName?: string
   remark?: string
+  allPurchased?: boolean
+  purchaseRequired?: boolean
 }
 
 export interface OrderResponse {

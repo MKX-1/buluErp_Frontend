@@ -29,6 +29,9 @@
 
           </span>
         </template>
+        <template v-else-if="column.prop === 'purchaseRequired'" #default="{ row }">
+          {{ row.purchaseRequired === true ? '是' : row.purchaseRequired === false ? '否' : row.allPurchased ? '否' : '是' }}
+        </template>
       </el-table-column>
       <el-table-column label="操作">
         <template #default="{ row }">
@@ -113,6 +116,7 @@ const columns = [
   },
   { prop: 'innerId', label: '内部编号' },
   { prop: 'outerId', label: '外部编号' },
+  { prop: 'purchaseRequired', label: '是否需要采购' },
   { prop: 'operator', label: '创建人' },
   { prop: 'remark', label: '备注' },
 ]

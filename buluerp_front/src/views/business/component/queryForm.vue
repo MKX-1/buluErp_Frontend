@@ -13,6 +13,12 @@
       <el-form-item label="内部编号" required>
         <el-input v-model="dialogForm.innerId" placeholder="请输入" />
       </el-form-item>
+      <el-form-item label="是否需要采购" required>
+        <el-radio-group v-model="dialogForm.purchaseRequired">
+          <el-radio :label="true">是</el-radio>
+          <el-radio :label="false">否</el-radio>
+        </el-radio-group>
+      </el-form-item>
       <el-form-item label="其他信息">
         <el-input v-model="dialogForm.remark" autocomplete="off" placeholder="请输入" />
       </el-form-item>
@@ -39,7 +45,7 @@
 <script setup lang="ts">
 import { computed, reactive, ref } from 'vue'
 import type { FormInstance } from 'element-plus'
-import { ElInput, ElButton, ElDialog, ElUpload, ElAutocomplete, ElFormItem } from 'element-plus'
+import { ElInput, ElButton, ElDialog, ElUpload, ElAutocomplete, ElFormItem, ElRadioGroup, ElRadio } from 'element-plus'
 import Form from '@/components/form/Form.vue'
 import { importOrderFile, getProductTemplate } from '@/apis/orders'
 import { resMap } from '../utils/statusMap'
@@ -65,6 +71,7 @@ const dialogForm = reactive({
   productName: '',
   customerName: '',
   operater: '',
+  purchaseRequired: true,
 })
 
 
@@ -175,6 +182,7 @@ const onAddCancel = () => {
   dialogForm.innerId = ''
   dialogForm.outerId = ''
   dialogForm.remark = ''
+  dialogForm.purchaseRequired = true
 }
 
 // onAddConfirm: 确认新增订单
@@ -185,6 +193,7 @@ const onAddConfirm = () => {
   dialogForm.innerId = ''
   dialogForm.outerId = ''
   dialogForm.remark = ''
+  dialogForm.purchaseRequired = true
 }
 
 const importDialogVisible = ref(false)
