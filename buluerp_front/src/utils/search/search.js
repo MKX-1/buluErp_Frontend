@@ -1,23 +1,30 @@
 import httpInstance from '../httpsInstance'
 let headers = { Authorization: `${localStorage.getItem('Authorization')}` }
 
-export const searchFunc = (url, key) => {
-  let tempUrl = `${url}?${key}=`
+export const searchFunc = (url, key, valueKey = key, fallbackKey = '') => {
+  const requestRows = (searchKey, content) => httpInstance({
+    url: `${url}?${searchKey}=${content}`,
+    method: 'get',
+    headers: headers,
+  })
+
   const debouncedSearch = debounce((ele, content) => {
     if (content) {
       ele.loading = true
-      httpInstance({
-        url: `${tempUrl}${content}`,
-        method: 'get',
-        headers: headers,
-      })
+      requestRows(key, content)
+        .then((res) => {
+          if (fallbackKey && (!res.rows || res.rows.length === 0)) {
+            return requestRows(fallbackKey, content)
+          }
+          return res
+        })
         .then((res) => {
           ele.options = res.rows.map((item) => {
             if(ele.showKey){
 
-              return { label: ele.showKey.map((showKey)=>showKey.label+':'+item[showKey.key]).join("  "), value: item[key] }
+              return { label: ele.showKey.map((showKey)=>showKey.label+':'+item[showKey.key]).join("  "), value: item[valueKey] }
             }else{
-              return { label: item[key], value: item[key] }
+              return { label: item[key], value: item[valueKey] }
             }
           })
         })

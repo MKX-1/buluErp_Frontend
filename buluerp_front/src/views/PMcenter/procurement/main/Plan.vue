@@ -54,9 +54,9 @@ const newFormData = ref([
       key: 'purchaseInfoId',
       width: 8,
       rules: [requiredRule],
-      showKey: [{ key: 'purchaseCode', label: "外购ID" }, { key: 'materialId', label: "物料" }, { key: 'unitPrice', label: "单价" }],
+      showKey: [{ key: 'id', label: "ID" }, { key: 'purchaseCode', label: "外购ID" }, { key: 'materialId', label: "物料" }, { key: 'unitPrice', label: "单价" }],
 
-      remoteFunc: searchFunc('system/purchase-info/list', 'purchaseCode'),
+      remoteFunc: searchFunc('system/purchase-info/list', 'purchaseCode', 'id', 'id'),
       options: [],
       loading: false,
     },
