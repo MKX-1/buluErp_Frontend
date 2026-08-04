@@ -151,7 +151,6 @@ const createFormRules = {
     { required: true, whitespace: true, message: '请输入外部编号', trigger: 'blur' },
   ],
   materialId: [
-    { required: true, whitespace: true, message: '请输入绑定物料ID', trigger: 'blur' },
     { pattern: /^\d+$/, message: '物料ID必须为数字', trigger: 'blur' },
   ],
 }
