@@ -13,6 +13,7 @@ import {
   finishSchedule,
   selectTransToArrange,
   newScheduleFromProduct,
+  uploadSchedulePicture,
 } from '@/apis/produceControl/produce/schedule'
 import { downloadBinaryFile } from '@/utils/file/base64'
 import TableList from '@/components/table/TableList.vue'
@@ -142,7 +143,9 @@ const newFormData = ref([
       options: [],
       loading: false,
     }],
-
+  [
+    { type: 'image', label: '布产图片', key: 'picture', width: 12 },
+  ],
 ])
 const newSubmit = ref({
 
@@ -452,14 +455,20 @@ const handleSubmit = () => {
   } else {
     createNewFormRef.value.validateForm((valid) => {
       if (valid) {
-        newSchedule(newSubmit.value).then((res) => {
-          page.value = 1
-          listSchedule(page.value, pageSize.value).then((res) => {
-            listData.value = res.rows
-            total.value = res.total
+        uploadSchedulePicture(newSubmit.value.picture).then((url) => {
+          if (url) {
+            newSubmit.value.pictureUrl = url
+          }
+          delete newSubmit.value.picture
+          newSchedule(newSubmit.value).then((res) => {
+            page.value = 1
+            listSchedule(page.value, pageSize.value).then((res) => {
+              listData.value = res.rows
+              total.value = res.total
+            })
+            ElMessage.success(res.msg)
+            newDialogVisible.value = false
           })
-          ElMessage.success(res.msg)
-          newDialogVisible.value = false
         })
       }
     })
@@ -601,50 +610,89 @@ const DeleteFunc = (row) => {
     `确认删除${ids.length}条记录`,
   )
 }
-const ids = ref([])
+const ids = ref(null)
 const transDialogVisible = ref(false)
-const createTransFormRef = ref()
-const transFormData = ref([
-  [
-    { type: 'input', label: '出模数', key: 'mouldOutput', width: 12, rules: [positiveNumberRule, requiredRule] },
-    {
-      type: 'timer',
-      label: '安排时间',
-      key: 'scheduledTime',
-      width: 12,
-      timerType: 'date',
-      rules: [requiredRule],
-    },
-  ],
-  [{ type: 'textarea', label: '备注', key: 'remarks', width: 24 }],
-  [{ type: 'image', label: '样例图', key: 'pictureFile', rules: [requiredRule], width: 12 }],
-])
-const transSubmit = ref({
-
-})
+const transRows = ref([])
+const transTableWrapRef = ref()
+const removeTransRow = (index) => {
+  transRows.value.splice(index, 1)
+}
+const focusTransTable = () => {
+  nextTick(() => {
+    transTableWrapRef.value?.focus()
+  })
+}
+const handleTransKeydown = (e) => {
+  const tag = e.target?.tagName
+  if (tag && ['INPUT', 'TEXTAREA', 'SELECT'].includes(tag)) return
+  const wrap = transTableWrapRef.value
+  if (!wrap) return
+  const scroller = wrap.querySelector('.el-scrollbar__wrap') || wrap.querySelector('.el-table__body-wrapper')
+  if (!scroller) return
+  const step = 240
+  if (e.key === 'ArrowRight') {
+    scroller.scrollLeft += step
+    e.preventDefault()
+  } else if (e.key === 'ArrowLeft') {
+    scroller.scrollLeft -= step
+    e.preventDefault()
+  }
+}
 const handleSubmitTrans = () => {
-  transSubmit.value.scheduledTime = parseTime(transSubmit.value.scheduledTime, '{y}-{m}-{d}')
-  createTransFormRef.value.validateForm((valid) => {
-    if (valid) {
-      selectTransToArrange({ ...transSubmit.value, scheduleIds: ids.value }).then((res) => {
-        ElMessage.success(res.msg)
-        transDialogVisible.value = false
-        listSchedule(page.value, pageSize.value).then((res) => {
-          listData.value = res.rows
-          total.value = res.total
-        })
-      })
+  if (!transRows.value.length) {
+    ElMessage.warning('请至少保留一条要导入排产的记录')
+    return
+  }
+  const invalid = transRows.value.find((row) => {
+    return row.mouldOutput === null || row.mouldOutput === undefined || row.mouldOutput === '' ||
+      row.scheduledTime === null || row.scheduledTime === undefined || row.scheduledTime === ''
+  })
+  if (invalid) {
+    ElMessage.warning('请完善所有排产信息后再提交')
+    return
+  }
+  const submitList = transRows.value.map((row) => {
+    return {
+      scheduleId: row.scheduleId,
+      mouldOutput: row.mouldOutput,
+      scheduledTime: parseTime(row.scheduledTime, '{y}-{m}-{d}'),
+      completionTime: row.completionTime ? parseTime(row.completionTime, '{y}-{m}-{d}') : undefined,
+      remarks: row.remarks,
+      pictureFile: row.pictureFile,
     }
   })
+  const doSubmit = (index) => {
+    if (index >= submitList.length) {
+      ElMessage.success('导入排产完成')
+      transDialogVisible.value = false
+      listSchedule(page.value, pageSize.value).then((res) => {
+        listData.value = res.rows
+        total.value = res.total
+      })
+      return
+    }
+    selectTransToArrange(submitList[index]).then(() => {
+      doSubmit(index + 1)
+    })
+  }
+  doSubmit(0)
 }
 const transToArrange = (row) => {
   if (row.length === 0) {
     ElMessage.warning('请先选择要导入排产的记录')
     return
   }
-  transSubmit.value = {
-
-  }
+  transRows.value = row.map((item) => {
+    return {
+      scheduleId: item.id,
+      scheduleInfo: item,
+      mouldOutput: null,
+      scheduledTime: null,
+      completionTime: null,
+      remarks: '',
+      pictureFile: null,
+    }
+  })
   ids.value = row.map((item) => item.id)
   transDialogVisible.value = true
 }
@@ -756,8 +804,68 @@ listSchedule(page.value, pageSize.value).then((res) => {
     </div>
   </template>
 </el-dialog>
-    <el-dialog v-model="transDialogVisible" title="导入排产" width="800px">
-      <CreateForm :data="transFormData" :Formvalue="transSubmit" ref="createTransFormRef" />
+    <el-dialog v-model="transDialogVisible" title="导入排产" width="900px" @opened="focusTransTable">
+      <div ref="transTableWrapRef" class="trans-table-wrap" tabindex="0" @keydown="handleTransKeydown">
+      <el-table :data="transRows" border max-height="500">
+        <el-table-column label="布产ID" width="70" prop="scheduleId" />
+        <el-table-column label="订单编号" width="130">
+          <template #default="scope">
+            {{ scope.row.scheduleInfo.orderCode }}
+          </template>
+        </el-table-column>
+        <el-table-column label="模具编码" width="110">
+          <template #default="scope">
+            {{ scope.row.scheduleInfo.mouldNumber }}
+          </template>
+        </el-table-column>
+        <el-table-column label="料别" width="100">
+          <template #default="scope">
+            {{ scope.row.scheduleInfo.materialType }}
+          </template>
+        </el-table-column>
+        <el-table-column label="单重" width="80">
+          <template #default="scope">
+            {{ scope.row.scheduleInfo.singleWeight }}
+          </template>
+        </el-table-column>
+        <el-table-column label="出模数" width="100">
+          <template #default="scope">
+            <el-input v-model="scope.row.mouldOutput" placeholder="必填" />
+          </template>
+        </el-table-column>
+        <el-table-column label="安排时间" width="150">
+          <template #default="scope">
+            <el-date-picker v-model="scope.row.scheduledTime" type="date" value-format="YYYY-MM-DD"
+              placeholder="必填" style="width: 100%" />
+          </template>
+        </el-table-column>
+        <el-table-column label="完成时间" width="150">
+          <template #default="scope">
+            <el-date-picker v-model="scope.row.completionTime" type="date" value-format="YYYY-MM-DD"
+              placeholder="选填" style="width: 100%" />
+          </template>
+        </el-table-column>
+        <el-table-column label="备注" min-width="120">
+          <template #default="scope">
+            <el-input v-model="scope.row.remarks" placeholder="选填" />
+          </template>
+        </el-table-column>
+        <el-table-column label="样例图" width="120">
+          <template #default="scope">
+            <el-upload :auto-upload="false" :limit="1"
+              :on-change="(file) => { scope.row.pictureFile = file.raw }"
+              :on-remove="() => { scope.row.pictureFile = null }">
+              <el-button size="small">上传</el-button>
+            </el-upload>
+          </template>
+        </el-table-column>
+        <el-table-column label="操作" width="70">
+          <template #default="scope">
+            <el-button type="text" @click="removeTransRow(scope.$index)">删除</el-button>
+          </template>
+        </el-table-column>
+      </el-table>
+      </div>
       <template #footer>
         <div class="dialog-footer">
           <el-button type="primary" @click="handleSubmitTrans"> 确认 </el-button>
@@ -783,3 +891,35 @@ listSchedule(page.value, pageSize.value).then((res) => {
     </el-dialog>
   </div>
 </template>
+<style>
+.trans-table-wrap {
+  outline: none;
+}
+
+.trans-table-wrap .el-scrollbar__bar.is-horizontal {
+  height: 14px;
+}
+
+.trans-table-wrap .el-scrollbar__thumb {
+  opacity: 0.6;
+  min-height: 24px;
+}
+
+.trans-table-wrap .el-table__body-wrapper::-webkit-scrollbar {
+  height: 14px;
+}
+
+.trans-table-wrap .el-table__body-wrapper::-webkit-scrollbar-thumb {
+  background: #c0c4cc;
+  border-radius: 7px;
+}
+
+.trans-table-wrap .el-table__body-wrapper::-webkit-scrollbar-thumb:hover {
+  background: #909399;
+}
+
+.trans-table-wrap .el-table__body-wrapper::-webkit-scrollbar-track {
+  background: #f5f7fa;
+  border-radius: 7px;
+}
+</style>

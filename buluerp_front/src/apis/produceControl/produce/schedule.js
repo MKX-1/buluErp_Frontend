@@ -136,3 +136,18 @@ export function newScheduleFromProduct(data) {
     data: data,
   })
 }
+
+// 上传布产图片，返回图片URL；未选图片时返回空字符串
+export function uploadSchedulePicture(file) {
+  if (!file) return Promise.resolve('')
+  const formData = new FormData()
+  formData.append('file', file)
+  return httpInstance({
+    url: 'common/upload',
+    method: 'post',
+    data: formData,
+    headers: {
+      'Content-Type': 'multipart/form-data',
+    },
+  }).then((res) => res.url || '')
+}
