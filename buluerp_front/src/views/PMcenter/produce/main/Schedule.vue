@@ -792,7 +792,7 @@ const handleSubmitTrans = () => {
     if (index >= submitList.length) {
       ElMessage.success('导入排产完成')
       transDialogVisible.value = false
-      listSchedule(page.value, pageSize.value).then((res) => {
+      listSchedule(page.value, pageSize.value, searchContent.value).then((res) => {
         listData.value = res.rows
         total.value = res.total
       })
