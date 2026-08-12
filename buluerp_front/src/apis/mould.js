@@ -68,6 +68,8 @@ export function importMouldFile(formData) {
     url: '/system/mould/import/with-manufacturer',
     method: 'post',
     data: formData,
+    // 大批量 Excel 需要留出解析和事务写入时间，仅放宽模具导入，不影响其他请求的超时策略。
+    timeout: 120000,
     headers: {
       'Content-Type': 'multipart/form-data'
     }
@@ -92,5 +94,4 @@ export function exportMould(ids) {
     responseType: 'blob'
   })
 }
-
 
