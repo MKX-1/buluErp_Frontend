@@ -278,7 +278,7 @@ const DeleteFunc = (row) => {
     'warning',
     func,
     `成功删除${ids.length}条记录`,
-    '用户权限不足',
+    '删除失败：请检查料型是否已被物料资料引用',
     `确认删除${ids.length}条记录`,
   )
 }

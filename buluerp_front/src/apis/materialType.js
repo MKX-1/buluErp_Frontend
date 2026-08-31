@@ -52,8 +52,10 @@ export function downLoadModule() {
 
 export function deleteMaterialInfo(ids) {
   return httpInstance({
-    url: `system/material-type/${ids.join(',')}`,
+    // 后端 DELETE 接口通过 Long[] ids 查询参数接收待删除记录，不使用路径变量。
+    url: `system/material-type`,
     method: 'delete',
+    params: { ids: ids.join(',') },
     headers: headers,
   })
 }
