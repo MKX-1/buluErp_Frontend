@@ -43,7 +43,17 @@ const newFormData = ref([
       width: 8,
     },
     { type: 'input', label: '名称', key: 'name', width: 8, rules: [requiredRule] }
-  ]])
+  ],
+  [
+    {
+      type: 'image',
+      label: '参考颜色',
+      key: 'referenceColor',
+      deleteKey: 'deleteReferenceColor',
+      width: 24,
+    },
+  ],
+])
 
 const editFormData = ref([
   [
@@ -60,7 +70,17 @@ const editFormData = ref([
       key: 'colorWeight',
       width: 12,
     }
-  ]])
+  ],
+  [
+    {
+      type: 'image',
+      label: '参考颜色',
+      key: 'referenceColor',
+      deleteKey: 'deleteReferenceColor',
+      width: 24,
+    },
+  ],
+])
 const newSubmit = ref({
 
 })
@@ -83,6 +103,12 @@ const tableData = ref([
     value: 'colorCode',
     label: '颜色编号',
     type: 'text',
+  },
+  {
+    value: 'referenceColorUrl',
+    label: '参考颜色',
+    type: 'picture',
+    preview: true,
   },
   {
     value: 'colorWeight',
@@ -110,7 +136,11 @@ const operation = ref([
       const id = row.id
       title.value = '编辑'
       editDialogVisible.value = true
-      editSubmit.value = { ...row }
+      editSubmit.value = {
+        ...row,
+        referenceColor: null,
+        deleteReferenceColor: false,
+      }
       nextTick(() => {
         editFormRef.value.clearValidate()
       })
@@ -164,7 +194,9 @@ const title = ref('编辑')
 //传给form组件的参数
 const resetNewSubmit = () => {
   newSubmit.value = {
-
+    referenceColor: null,
+    referenceColorUrl: '',
+    deleteReferenceColor: false,
   }
 }
 const onCreate = () => {

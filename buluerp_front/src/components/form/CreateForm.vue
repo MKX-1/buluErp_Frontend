@@ -117,16 +117,26 @@
         <el-form-item :label="ele.label" v-else-if="ele.type === 'image'" :prop="ele.key">
           <upload
             :setFile="
-              (file: File) => {
+              (file: File | null) => {
                 Formvalue[ele.key] = file
+                if (file && ele.deleteKey) {
+                  Formvalue[ele.deleteKey] = false
+                }
               }
             "
             :setImgUrl="
-              (url) => {
-                Formvalue[ele.key + 'Url'] = url
+              (url: string) => {
+                Formvalue[ele.urlKey || ele.key + 'Url'] = url
               }
             "
-            :ImgUrl="Formvalue[ele.key + 'Url']"
+            :onRemove="
+              () => {
+                if (ele.deleteKey) {
+                  Formvalue[ele.deleteKey] = true
+                }
+              }
+            "
+            :ImgUrl="Formvalue[ele.urlKey || ele.key + 'Url']"
           />
         </el-form-item>
         <el-form-item :label="ele.label" v-else-if="ele.type === 'fileList'" :prop="ele.key">

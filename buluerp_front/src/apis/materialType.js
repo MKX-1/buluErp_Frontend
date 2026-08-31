@@ -1,6 +1,21 @@
 import httpInstance from '@/utils/httpsInstance.js'
 let headers = { Authorization: `${localStorage.getItem('Authorization')}` }
 
+function toMaterialTypeFormData(data) {
+  const formData = new FormData()
+  const fields = ['id', 'name', 'colorCode', 'colorWeight', 'deleteReferenceColor']
+  fields.forEach((field) => {
+    const value = data[field]
+    if (value !== undefined && value !== null && value !== '') {
+      formData.append(field, String(value))
+    }
+  })
+  if (data.referenceColor instanceof File) {
+    formData.append('referenceColor', data.referenceColor)
+  }
+  return formData
+}
+
 export function getMaterialInfo(id) {
   return httpInstance({
     url: `/system/material-type`,
@@ -12,9 +27,8 @@ export function newMaterialInfo(data) {
   return httpInstance({
     url: `system/material-type`,
     method: 'post',
-    headers: headers,
-    data: data,
-    headers
+    data: toMaterialTypeFormData(data),
+    headers: { ...headers, 'Content-Type': 'multipart/form-data' },
   })
 }
 
@@ -22,8 +36,8 @@ export function changeMaterialInfo(data) {
   return httpInstance({
     url: `system/material-type`,
     method: 'put',
-    headers,
-    data: data,
+    headers: { ...headers, 'Content-Type': 'multipart/form-data' },
+    data: toMaterialTypeFormData(data),
   })
 }
 

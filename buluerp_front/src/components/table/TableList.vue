@@ -51,8 +51,10 @@
               <el-image
                 v-if="row[item.value]"
                 :src="getFullImageUrl(row[item.value])"
+                :preview-src-list="item.preview ? [getFullImageUrl(row[item.value])] : []"
+                :preview-teleported="!!item.preview"
                 style="width: 50px; height: 50px"
-                @click="donwLoadFile(getFullImageUrl(row[item.value]))"
+                @click="!item.preview && donwLoadFile(getFullImageUrl(row[item.value]))"
               />
             </span>
             <span v-if="getType(item, row) === 'fileList'">

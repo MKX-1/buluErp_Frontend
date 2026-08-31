@@ -29,7 +29,8 @@ export default defineConfig({
   server: {
     proxy: {
       '/dev-api': {
-        target: 'http://154.201.77.135:8080',
+        // target: 'http://154.201.77.135:8080',
+        target: 'http://localhost:8080',
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/dev-api/, ''),
         configure: (proxy, options) => {
