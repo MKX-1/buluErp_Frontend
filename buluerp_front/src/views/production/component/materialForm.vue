@@ -26,7 +26,7 @@
               </el-select>
             </el-form-item>
           </el-col>
-          <el-col :span="8">
+          <el-col :span="8" v-if="props.materialScope === 'all'">
             <el-form-item label="是否外购" prop="purchased">
               <el-select v-model="formState.purchased" placeholder="请选择">
                 <el-option label="否" :value=false />
@@ -45,8 +45,7 @@
       <el-button @click="handleClear">重置</el-button>
     </el-row>
 
-    <!-- 新建和导入按钮 -->
-    <el-row>
+    <el-row v-if="props.materialScope === 'all'">
       <el-space wrap :size=12>
         <el-dropdown @command="handleCreateCommand">
           <el-button type="primary">
@@ -69,11 +68,17 @@
         </el-dropdown>
       </el-space>
     </el-row>
+    <el-row v-else>
+      <el-space wrap :size=12>
+        <el-button type="primary" @click="handleCreateByScope">新建</el-button>
+        <el-button @click="handleImportByScope">导入</el-button>
+      </el-space>
+    </el-row>
   </el-space>
 
   <div style="text-align: right; margin-top: 8px">
-    <el-link type="primary" @click="handleDownloadTemplate">下载内部导入模板</el-link>
-    <el-link type="primary" @click="DownloadPurchasedTemplate">下载外购导入模板</el-link>
+    <el-link v-if="props.materialScope !== 'purchased'" type="primary" @click="handleDownloadTemplate">下载内部导入模板</el-link>
+    <el-link v-if="props.materialScope !== 'internal'" type="primary" @click="DownloadPurchasedTemplate">下载外购导入模板</el-link>
   </div>
 </el-col>
 
@@ -140,6 +145,14 @@ import { downloadBinaryFile } from '@/utils/file/base64'
 import PurchaseDialog from './purchaseDialog.vue'
 import materialCreateDialog from './materialCreateDialog.vue'
 
+type MaterialScope = 'all' | 'internal' | 'purchased'
+
+const props = withDefaults(defineProps<{
+  materialScope?: MaterialScope
+}>(), {
+  materialScope: 'all',
+})
+
 const emit = defineEmits(['search'])
 
 const formState = reactive({
@@ -186,6 +199,14 @@ const handleClear = () => {
   formState.purchased = null
 }
 
+const handleCreateByScope = () => {
+  if (props.materialScope === 'purchased') {
+    handleCreateExternal()
+  } else {
+    handleCreateInternal()
+  }
+}
+
 const handleCreateCommand = (command: string) => {
   if (command === 'internal') {
     handleCreateInternal()  // 调用新建内部物料的处理函数
@@ -206,7 +227,7 @@ const handleCreatePurSubmit = async (formData: any) => {
 
     if (res.code === 200) {
       messageBox('success', null, '新建成功', '', '')
-      dialogVisible.value = false
+      purchasedialogVisible.value = false
       handleSearch()
     } else {
       messageBox('error', null, '', res.msg || '新建失败', '')
@@ -251,6 +272,14 @@ const handleImportExternal = () => {
   importPurDialogVisible.value = true
 }
 
+const handleImportByScope = () => {
+  if (props.materialScope === 'purchased') {
+    handleImportExternal()
+  } else {
+    handleImport()
+  }
+}
+
 const beforeUpload = (file: File) => {
   const isExcel =
     file.type === 'application/vnd.ms-excel' ||
@@ -271,7 +300,7 @@ const handleUpload = async (option: any) => {
 
   if (res.code === 200) {
       messageBox('success', null, '导入成功', '', '')
-      dialogVisible.value = false
+      importDialogVisible.value = false
       handleSearch()
     } else {
       messageBox('error', null, '', res.msg || '导入失败', '')
@@ -284,7 +313,7 @@ const handlePurUpload = async (option: any) => {
 
   if (res.code === 200) {
       messageBox('success', null, '导入成功', '', '')
-      dialogVisible.value = false
+      importPurDialogVisible.value = false
       handleSearch()
     } else {
       messageBox('error', null, '', res.msg || '导入失败', '')

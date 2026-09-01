@@ -62,7 +62,7 @@
 </template>
 
 <script lang="ts" setup>
-import { ref, watch, onMounted } from 'vue'
+import { computed, ref, watch, onMounted } from 'vue'
 import {
   deleteMaterial,
   exportMaterialFile,
@@ -85,10 +85,15 @@ const showDialog = ref(false)
 const showDetailDialog = ref(false)
 const currentRow = ref({})
 
-const props = defineProps<{
+type MaterialScope = 'all' | 'internal' | 'purchased'
+
+const props = withDefaults(defineProps<{
   queryParams: Record<string, any>
   addTab: (targetName: string, component: any, data?: any, targetPath?: string) => void
-}>()
+  materialScope?: MaterialScope
+}>(), {
+  materialScope: 'all',
+})
 
 const data = ref([])
 const page = ref(1)
@@ -113,7 +118,7 @@ const openPurchaseDialog = (purchaseInfo: PurchaseInfo) => {
 }
 
 // 定义表格列
-const tableData = [
+const baseTableData = [
   { value: 'drawingReference', label: '胶件图片', type: 'picture' },
   { value: 'modelUrl', label: '3D模型', type: 'model' },
   { value: 'id', label: '物料ID', type: 'text' },
@@ -146,12 +151,26 @@ const tableData = [
   { value: 'updateTime', label: '更新时间', type: 'text' },
 ]
 
+const tableData = computed(() => {
+  if (props.materialScope === 'internal') {
+    return baseTableData.filter((item) => item.value !== 'purchased')
+  }
+  return baseTableData
+})
+
 // 操作列
-const operations = [
+const baseOperations = [
   { value: '模具详情', func: (row: any) => onDetail(row), disabled: false },
   { value: '编辑', func: (row: any) => onEdit(row), disabled: false },
   { value: '查看外购', func: (row: any) => openPurchaseDialog(row.purchaseInfo), disabled: false },
 ]
+
+const operations = computed(() => {
+  if (props.materialScope === 'internal') {
+    return baseOperations.filter((item) => item.value !== '查看外购')
+  }
+  return baseOperations
+})
 
 // 控制按钮的禁用状态
 const control = ref([{ disabled: false }, { disabled: false }, { disabled: false }])
