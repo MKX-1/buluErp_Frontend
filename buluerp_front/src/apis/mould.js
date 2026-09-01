@@ -45,6 +45,14 @@ export function updateMould(data) {
   })
 }
 
+export function batchUpdateMouldStatus(data) {
+  return httpInstance({
+    url: 'system/mould/batch-status',
+    method: 'PUT',
+    data
+  })
+}
+
 export function getMouldDetail(id) {
   return httpInstance({
     url: `system/mould/${id}`,
@@ -94,4 +102,3 @@ export function exportMould(ids) {
     responseType: 'blob'
   })
 }
-

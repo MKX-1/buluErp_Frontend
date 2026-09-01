@@ -4,6 +4,7 @@
       <div class="card-header">
         <span>展示</span>
         <div>
+          <slot name="toolbar"></slot>
           <el-button
             type="primary"
             @click="exportFunc(select!.getSelectionRows())"
@@ -63,6 +64,7 @@
                 type="primary"
                 text
                 v-for="subItem in row[item.value]"
+                :key="subItem[item.key]"
                 @click="donwLoadFile(getFullImageUrl(subItem[item.key]), item.miniType)"
               >
                 {{ subItem[item.key].split('/').pop() }}
@@ -71,10 +73,10 @@
             <span v-else-if="getType(item, row) == 'text'">{{ row[item.value] }}</span>
             <span v-else-if="getType(item, row) == 'Maptext'">{{ item.map[row[item.value]] }}</span>
             <span v-else-if="getType(item, row) == 'tags'">
-              <el-tag v-for="tag in getList(row[item.value])">{{ tag }}</el-tag>
+              <el-tag v-for="tag in getList(row[item.value])" :key="tag">{{ tag }}</el-tag>
             </span>
             <span v-else-if="getType(item, row) == 'warningtags'">
-              <el-tag v-for="tag in getList(row[item.value])" type="warning">{{ tag }}</el-tag>
+              <el-tag v-for="tag in getList(row[item.value])" :key="tag" type="warning">{{ tag }}</el-tag>
             </span>
             <span v-else-if="getType(item, row) === 'model'" class="modelShow">
               <div v-if="row[item.value]" style="width: 100px; height: 100px; margin: 0 auto;">
@@ -93,6 +95,7 @@
               :disabled="operation.disabled"
               @click="operation.func(row)"
               v-for="operation in operations"
+              :key="operation.value"
               >{{ operation.value }}</el-button
             >
           </template>
@@ -122,6 +125,11 @@ defineProps([
   'transToArrange',
 ])
 const select = ref()
+const getSelectionRows = () => select.value?.getSelectionRows?.() ?? []
+const clearSelection = () => select.value?.clearSelection?.()
+
+defineExpose({ getSelectionRows, clearSelection })
+
 const getList = (ele) => {
   if (typeof ele === 'string') {
     return ele.split(',')

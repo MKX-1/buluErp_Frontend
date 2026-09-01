@@ -11,14 +11,7 @@
         <el-row :gutter="20" align="middle">
           <el-col :span="8">
             <el-form-item label="模具编号">
-              <el-select v-model="formState.mouldNumber" placeholder="请选择模具编号">
-                <el-option
-                  v-for="item in mouldNumberOptions"
-                  :key="item.value"
-                  :label="item.label"
-                  :value="item.value"
-                />
-              </el-select>
+              <el-input v-model="formState.mouldNumber" placeholder="请输入模具编号" clearable />
             </el-form-item>
           </el-col>
           <el-col :span="8">
@@ -156,7 +149,6 @@ const formState = reactive({
   purchased: null
 })
 
-const mouldNumberOptions = ref<{ label: string; value: string }[]>([])
 const mouldManufacturerOptions = ref<{ label: string; value: string }[]>([])
 
 const fetchMaterialOptions = async () => {
@@ -164,10 +156,6 @@ const fetchMaterialOptions = async () => {
     const res = await getMaterialList({})
     const rows = res.rows || []
 
-    mouldNumberOptions.value = [...new Set(rows.map((item) => item.mouldNumber))].map((val) => ({
-      label: String(val),
-      value: String(val),
-    }))
     mouldManufacturerOptions.value = [...new Set(rows.map((item) => item.mouldManufacturer))].map(
       (val) => ({
         label: String(val),
