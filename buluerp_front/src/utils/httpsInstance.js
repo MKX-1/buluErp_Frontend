@@ -53,7 +53,7 @@ httpInstance.interceptors.response.use(
       ElMessage.error(res.data.msg || '请求资源不存在')
       return Promise.reject(res.data)
     } else if (res.data.code === 409) {
-      ElMessage.error(res.msg)
+      ElMessage.error(res.data.msg || 'Excel 导入失败')
       const error_text = res.data.data
         .map((ele) => {
           return '第' + ele.rowNum + '行：' + ele.errorMsg
@@ -75,7 +75,12 @@ httpInstance.interceptors.response.use(
     }
   },
   (err) => {
-    ElMessage.error(err.response?.data?.message || '服务异常')
+    const isTimeout = err.code === 'ECONNABORTED' || err.code === 'ETIMEDOUT'
+    ElMessage.error(
+      isTimeout
+        ? '请求超时，后台可能仍在处理，请先查询结果，勿重复提交'
+        : err.response?.data?.msg || err.response?.data?.message || '网络或服务异常，请检查连接',
+    )
     return Promise.reject(err)
   },
 )

@@ -32,6 +32,7 @@ export default defineConfig({
         //target: 'http://8.130.123.199:8080',
         target: 'http://localhost:8080',
         changeOrigin: true,
+        proxyTimeout: 600000,
         rewrite: (path) => path.replace(/^\/dev-api/, ''),
         configure: (proxy, options) => {
           proxy.on('proxyReq', (proxyReq, req, res) => {
@@ -41,9 +42,20 @@ export default defineConfig({
           })
           proxy.on('proxyRes', (proxyRes, req, res) => {
             console.log(`✅ 后端响应: ${req.method} ${req.url} → ${proxyRes.statusCode}`)
+            // 上游响应只传了一部分便断开时，pipe 不会自动结束浏览器响应。
+            proxyRes.on('aborted', () => res.destroy())
+            proxyRes.on('error', () => res.destroy())
           })
           proxy.on('error', (err, req, res) => {
             console.error(`❌ 代理错误: ${req.method} ${req.url}`, err)
+            if (!res.destroyed && 'writeHead' in res) {
+              if (!res.headersSent) {
+                res.writeHead(502, { 'Content-Type': 'application/json; charset=utf-8' })
+                res.end(JSON.stringify({ code: 502, msg: '后端连接中断，请先查询导入结果，勿重复提交' }))
+              } else {
+                res.destroy()
+              }
+            }
           })
         },
       },

@@ -136,8 +136,8 @@ const formConfig = reactive([
     { label: '单重', key: 'singleWeight', type: 'number', width: 12 }
   ],
   [
-    { label: '物料编码', key: 'materialCode', type: 'input', width: 12, required: true, rules: [{ required: true, message: '请输入物料编码', trigger: 'blur' }] },
-    { label: '物料名称', key: 'materialName', type: 'input', width: 12, required: true, rules: [{ required: true, message: '请输入物料名称', trigger: 'blur' }] },
+    { label: '物料编码', key: 'materialCode', type: 'input', width: 12 },
+    { label: '物料名称', key: 'materialName', type: 'input', width: 12 },
   ],
   [
     { label: '样品库位', key: 'sampleLocation', type: 'input', width: 12 },

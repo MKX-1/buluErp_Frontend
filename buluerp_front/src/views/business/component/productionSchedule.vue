@@ -433,6 +433,7 @@ const operation = ref([
 const title = ref('新增')
 //新增与修改
 const importDialogVisible = ref(false)
+const importing = ref(false)
 const editDialogVisible = ref(false)
 
 const newDialogVisible = ref(false)
@@ -552,18 +553,22 @@ const onDownloadTemplate = () => {
   })
 }
 const handleUpload = async (option: any) => {
+  if (importing.value) return
+  importing.value = true
   const formData = new FormData()
   formData.append('file', option.file)
 
-  importFile(formData).then((res) => {
+  try {
+    const res = await importFile(formData)
     ElMessage.success(res.msg)
-    listSchedule(page.value, pageSize.value).then((res) => {
-      listData.value = res.rows
-      total.value = res.total
-    })
-  })
-
-  importDialogVisible.value = false
+    importDialogVisible.value = false
+    const result = await listSchedule(page.value, pageSize.value)
+    listData.value = result.rows
+    total.value = result.total
+    return res
+  } finally {
+    importing.value = false
+  }
 }
 let count = 1
 //传给table组件
@@ -879,9 +884,11 @@ listSchedule(page.value, pageSize.value).then((res) => {
         </div>
       </template>
     </el-dialog>
-    <el-dialog v-model="importDialogVisible" title="导入 Excel" width="400px">
+    <el-dialog v-model="importDialogVisible" title="导入 Excel" width="400px"
+      :close-on-click-modal="!importing" :close-on-press-escape="!importing" :show-close="!importing">
       <el-upload class="upload-demo" drag :show-file-list="false" :before-upload="beforeUpload"
-        :http-request="handleUpload" accept=".xlsx,.xls">
+        :http-request="handleUpload" :disabled="importing" v-loading="importing"
+        element-loading-text="正在导入，请稍候，请勿重复提交" accept=".xlsx,.xls">
         <i class="el-icon-upload"></i>
         <div class="el-upload__text">将文件拖到此处，或 <em>点击上传</em></div>
         <template v-slot:tip>

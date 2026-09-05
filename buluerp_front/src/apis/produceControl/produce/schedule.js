@@ -106,6 +106,8 @@ export function importFile(formData) {
   return httpInstance({
     url: 'system/products-schedule/import',
     method: 'post',
+    // 图片解析和逐行入库可能持续数分钟，不能沿用普通请求的 5 秒超时。
+    timeout: 600000,
     data: formData,
     headers: {
       ...headers,
