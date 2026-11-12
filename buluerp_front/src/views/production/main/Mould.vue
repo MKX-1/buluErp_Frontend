@@ -185,6 +185,8 @@ const mouldStatusOptions = [
   { value: '模具故障送修中', label: '模具故障送修中' },
   { value: '维修好返厂待试模', label: '维修好返厂待试模' },
   { value: '已外发', label: '已外发' },
+  { value: '先生产后修模', label: '先生产后修模' },
+  { value: '已试模', label: '已试模' },
 ]
 
 // 查询表单
@@ -198,6 +200,7 @@ const formData = ref([
       key: 'status',
       options: mouldStatusOptions,
     },
+    { type: 'input', label: '备注', key: 'remark' },
   ],
 ])
 
@@ -205,6 +208,7 @@ const searchContent = ref({
   mouldNumber: '',
   manufacturerName: '',
   status: '',
+  remark: '',
 })
 // 批量范围使用已加载列表的条件，避免修改搜索框但未查询时误更新其他记录。
 const appliedFilters = ref({ ...searchContent.value })
@@ -221,6 +225,7 @@ const tableData = ref([
     label: '模具状态',
     type: (row) => (row.status === '模具故障送修中' ? 'warningtags' : 'tags'),
   },
+  { value: 'remark', label: '备注', type: 'text' },
   { value: 'mouldHouseId', label: '模房id', type: 'text' },
 ])
 
@@ -270,6 +275,7 @@ const activeFilterTags = computed(() => {
   if (appliedFilters.value.mouldNumber) tags.push(`模具编号：${appliedFilters.value.mouldNumber}`)
   if (appliedFilters.value.manufacturerName) tags.push(`模具厂商：${appliedFilters.value.manufacturerName}`)
   if (appliedFilters.value.status) tags.push(`原状态：${appliedFilters.value.status}`)
+  if (appliedFilters.value.remark) tags.push(`备注：${appliedFilters.value.remark}`)
   return tags
 })
 
@@ -402,6 +408,7 @@ const onCreate = () => {
   ]
 
   dynamicFormData.value.push([
+    { type: 'textarea', label: '备注', key: 'remark', width: 24 },
     { type: 'image', label: '模具图片', key: 'picture', deleteKey: 'deletePicture', width: 24 },
   ])
   editDialogVisible.value = true
@@ -466,6 +473,7 @@ const editRow = (row) => {
   ]
 
   dynamicFormData.value.push([
+    { type: 'textarea', label: '备注', key: 'remark', width: 24 },
     { type: 'image', label: '模具图片', key: 'picture', deleteKey: 'deletePicture', width: 24 },
   ])
   editDialogVisible.value = true

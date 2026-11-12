@@ -4,10 +4,11 @@ import { toMouldFormData } from '../mouldFormData.js'
 
 test('uploads the image file with mould fields, excluding preview URLs and unrelated material images', () => {
   const picture = new File(['image'], 'mould.png', { type: 'image/png' })
-  const form = toMouldFormData({ mouldNumber: 'M001', manufacturerName: '厂商A', picture,
-    pictureUrl: 'created', drawingReference: '/profile/material.png' })
+  const form = toMouldFormData({ mouldNumber: 'M001', manufacturerName: '厂商A', remark: '优先生产',
+    picture, pictureUrl: 'created', drawingReference: '/profile/material.png' })
   assert.equal(form.get('mouldNumber'), 'M001')
   assert.equal(form.get('manufacturerName'), '厂商A')
+  assert.equal(form.get('remark'), '优先生产')
   assert.equal(form.get('picture').name, 'mould.png')
   assert.equal(form.get('picture').size, picture.size)
   assert.equal(form.has('pictureUrl'), false)
