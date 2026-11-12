@@ -11,16 +11,19 @@ const props = defineProps<{ data: any }>()
 const detail = ref(props.data)
 const basicInfoRef = ref()
 
-const refreshBasicInfo = () => {
-  basicInfoRef.value?.refreshData()
+const refreshBasicInfo = async () => {
+  if (!detail.value?.id) return
+  const res = await getProductDetail(detail.value.id)
+  detail.value = res.data
 }
+onMounted(refreshBasicInfo)
 
 </script>
 
 <template>
   <div class="col">
     <BordShow content="产品详情页" path="产品管理/详情" />
-    <basicInfomation ref="basicInfoRef" v-if="detail" :detail="detail" :materialData="materialData"  />
+    <basicInfomation ref="basicInfoRef" v-if="detail" :detail="detail" :materialData="[]" @saved="refreshBasicInfo"  />
     <StyleList v-if="detail" :detail="detail"  @refresh="refreshBasicInfo"/>
   </div>
 </template>

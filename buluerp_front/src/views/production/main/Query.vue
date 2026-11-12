@@ -13,6 +13,7 @@ const searchParams = ref<Record<string, any>>({}) // 初始为空对象
 
 const handleSearch = (params: Record<string, any>) => {
   const filteredParams = {
+    innerId: params.innerId || null,
     id: params.productCode || null,
     name: params.productName || null,
     designStatus: params.productStatus,
@@ -25,7 +26,7 @@ const handleSearch = (params: Record<string, any>) => {
 }
 
 const handleCreated = () => {
-  handleSearch(searchParams.value)
+  searchParams.value = { ...searchParams.value }
 }
 
 </script>

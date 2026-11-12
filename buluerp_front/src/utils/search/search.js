@@ -3,7 +3,8 @@ let headers = { Authorization: `${localStorage.getItem('Authorization')}` }
 
 export const searchFunc = (url, key, valueKey = key, fallbackKey = '') => {
   const requestRows = (searchKey, content) => httpInstance({
-    url: `${url}?${searchKey}=${content}`,
+    url,
+    params: { [searchKey]: content },
     method: 'get',
     headers: headers,
   })
@@ -20,11 +21,11 @@ export const searchFunc = (url, key, valueKey = key, fallbackKey = '') => {
         })
         .then((res) => {
           ele.options = res.rows.map((item) => {
+            const optionValue = typeof valueKey === 'function' ? valueKey(item) : item[valueKey]
             if(ele.showKey){
-
-              return { label: ele.showKey.map((showKey)=>showKey.label+':'+item[showKey.key]).join("  "), value: item[valueKey] }
+              return { label: ele.showKey.map((showKey)=>showKey.label+':'+item[showKey.key]).join("  "), value: optionValue, raw: item }
             }else{
-              return { label: item[key], value: item[valueKey] }
+              return { label: key === 'innerId' && item.innerIds?.length ? item.innerIds.join(' / ') : item[key], value: optionValue, raw: item }
             }
           })
         })

@@ -72,6 +72,14 @@
             </span>
             <span v-else-if="getType(item, row) == 'text'">{{ row[item.value] }}</span>
             <span v-else-if="getType(item, row) == 'Maptext'">{{ item.map[row[item.value]] }}</span>
+            <el-space v-else-if="getType(item, row) === 'innerCodes'" wrap>
+              <el-tag v-for="code in (row[item.value] || [row.innerId]).slice(0, 2)" :key="code" :title="code"
+                style="max-width: 150px; overflow: hidden; text-overflow: ellipsis">{{ code }}</el-tag>
+              <el-popover v-if="(row[item.value] || []).length > 2" trigger="click" :width="280">
+                <template #reference><el-button link type="primary">查看全部 {{ row[item.value].length }} 个编号</el-button></template>
+                <div v-for="code in row[item.value]" :key="code" style="overflow-wrap: anywhere; margin: 5px 0">{{ code }}</div>
+              </el-popover>
+            </el-space>
             <span v-else-if="getType(item, row) == 'tags'">
               <el-tag v-for="tag in getList(row[item.value])" :key="tag">{{ tag }}</el-tag>
             </span>

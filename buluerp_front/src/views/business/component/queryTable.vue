@@ -32,6 +32,13 @@
         <template v-else-if="column.prop === 'purchaseRequired'" #default="{ row }">
           {{ row.purchaseRequired === true ? '是' : row.purchaseRequired === false ? '否' : row.allPurchased ? '否' : '是' }}
         </template>
+        <template v-else-if="column.prop === 'innerId'" #default="{ row }">
+          <el-tag v-for="code in getProductInnerCodes(row).slice(0, 2)" :key="code" style="margin: 2px">{{ code }}</el-tag>
+          <el-popover v-if="getProductInnerCodes(row).length > 2" trigger="click" width="300">
+            <template #reference><el-button link type="primary">查看全部 {{ row.innerIds.length }} 个编号</el-button></template>
+            <div v-for="code in row.innerIds" :key="code">{{ code }}</div>
+          </el-popover>
+        </template>
       </el-table-column>
       <el-table-column label="操作">
         <template #default="{ row }">
@@ -54,9 +61,12 @@
 
     <!-- 编辑弹窗 -->
     <el-dialog title="编辑订单" v-model="editDialogVisible" width="500px">
-      <el-form :model="editForm" label-width="100px">
+      <el-form ref="editFormRef" :model="editForm" :rules="editRules" label-width="100px">
         <el-form-item label="订单ID">
           <el-input v-model="editForm.id" disabled />
+        </el-form-item>
+        <el-form-item label="内部编号" prop="innerIds">
+          <InnerCodeEditor v-model="editForm.innerIds" lock-primary entity-label="订单" />
         </el-form-item>
         <!-- <el-form-item label="客户姓名">
           <el-input v-model="editForm.customerName" />
@@ -76,7 +86,7 @@
       </el-form>
       <template #footer>
         <el-button @click="editDialogVisible = false">取消</el-button>
-        <el-button type="primary" @click="onSaveEdit">保存</el-button>
+        <el-button type="primary" :loading="saving" @click="onSaveEdit">保存</el-button>
       </template>
     </el-dialog>
   </el-card>
@@ -91,11 +101,20 @@ import { resMap } from '../utils/statusMap'
 import { messageBox } from '@/components/message/messageBox'
 import useTabStore from '@/stores/modules/tabs'
 import { downloadBinaryFile } from '@/utils/file/base64'
+import type { FormInstance } from 'element-plus'
+import InnerCodeEditor from '@/views/production/component/InnerCodeEditor.vue'
+import { getProductInnerCodes, validateProductInnerCodes } from '@/utils/productInnerCodes.js'
+import { getOrderDetailById } from '@/apis/orders'
+
+const editFormRef = ref<FormInstance>()
+const editRules = { innerIds: [{ validator: validateProductInnerCodes, trigger: ['blur', 'change'] }] }
+const saving = ref(false)
 
 const props = defineProps<{
   // queryParams: Record<string, any>
   addTab: (targetName: string, component: any, data?: any, targetPath?: string) => void
   tableData: any[]
+  onUpdateOrder: (data: any) => Promise<void>
   pagination: {
     page: number
     pageSize: number
@@ -140,6 +159,7 @@ const editDialogVisible = ref(false)
 const editForm = reactive({
   id: 0,
   innerId: '',
+  innerIds: [''],
   outerId: '',
   customerName: '',
   status: 0,
@@ -149,18 +169,26 @@ const editForm = reactive({
 })
 
 // 点击“编辑”按钮时触发
-const onEdit = (row: TableDataType) => {
-
-  Object.assign(editForm, row)
+const onEdit = async (row: TableDataType) => {
+  const res = await getOrderDetailById(row.id)
+  const detail = res.data[0]
+  Object.assign(editForm, detail, { innerIds: getProductInnerCodes(detail) })
   // 打开编辑弹窗
   editDialogVisible.value = true
 }
 
 // 保存编辑后的数据
-const onSaveEdit = () => {
-  emit('onUpdated', { ...editForm })
-  emit('fetchData')
-  editDialogVisible.value = false
+const onSaveEdit = async () => {
+  if (saving.value || !await editFormRef.value?.validate().catch(() => false)) return
+  saving.value = true
+  try {
+    await props.onUpdateOrder({ ...editForm, innerIds: editForm.innerIds.map(code => code.trim()) })
+    editDialogVisible.value = false
+  } catch {
+    // 保存失败时保留用户输入。
+  } finally {
+    saving.value = false
+  }
 }
 const customerSuggestions = (queryString: string, cb) => {
   emit('customerSuggestions', queryString, cb)

@@ -2,7 +2,7 @@
   <Form :data="data" :title="title" :onSubmit="onSubmit" :onCreate="onCreate" :onImport="onImport"
     :onDownloadTemplate="onDownloadTemplate" :searchForm="searchForm" :formState="formState"></Form>
   <el-dialog v-model="dialogFormVisible" title="新增订单" width="500">
-    <el-form :model="dialogForm">
+    <el-form ref="createFormRef" :model="dialogForm" :rules="createRules">
       <el-form-item label="客户姓名">
         <el-autocomplete v-model="dialogForm.customerName" :fetch-suggestions="customerSuggestions" :value-key="'value'"
           @blur="checkCustomerName" placeholder="请输入" />
@@ -10,8 +10,8 @@
       <el-form-item label="外部编号" required>
         <el-input v-model="dialogForm.outerId" placeholder="请输入" />
       </el-form-item>
-      <el-form-item label="内部编号" required>
-        <el-input v-model="dialogForm.innerId" placeholder="请输入" />
+      <el-form-item label="内部编号" prop="innerIds" required>
+        <InnerCodeEditor v-model="dialogForm.innerIds" entity-label="订单" />
       </el-form-item>
       <el-form-item label="是否需要采购" required>
         <el-radio-group v-model="dialogForm.purchaseRequired">
@@ -26,7 +26,7 @@
     <template #footer>
       <div class="dialog-footer">
         <el-button @click="onAddCancel">取消</el-button>
-        <el-button type="primary" @click="onAddConfirm"> 确定 </el-button>
+        <el-button type="primary" :loading="saving" @click="onAddConfirm"> 确定 </el-button>
       </div>
     </template>
   </el-dialog>
@@ -53,6 +53,13 @@ import { downloadBinaryFile } from '@/utils/file/base64'
 import { messageBox } from '@/components/message/messageBox'
 import { format } from 'date-fns'
 import type { SubmitFormType } from '../types'
+import InnerCodeEditor from '@/views/production/component/InnerCodeEditor.vue'
+import { validateProductInnerCodes } from '@/utils/productInnerCodes.js'
+
+const props = defineProps<{ onCreateOrder: (data: any) => Promise<void> }>()
+const createFormRef = ref<FormInstance>()
+const createRules = { innerIds: [{ validator: validateProductInnerCodes, trigger: ['blur', 'change'] }] }
+const saving = ref(false)
 
 const dialogFormVisible = ref(false)
 const emit = defineEmits(['onSubmit', 'onAdd', 'checkCustomerName', 'customerSuggestions'])
@@ -63,6 +70,7 @@ const dialogForm = reactive({
   operator: '',
   otherInfo: '',
   innerId: '',
+  innerIds: [''],
   outerId: '',
   id: '',
   remark: '',
@@ -111,6 +119,7 @@ const data = reactive([
     { label: '创建人姓名', type: 'input', key: 'operator' },
     { label: '备注', type: 'input', key: 'remark' },
   ],
+  [{ label: '内部编号', type: 'input', key: 'innerId' }],
 ])
 
 const formRef = ref<FormInstance>()
@@ -132,6 +141,7 @@ const formState = reactive({
 
 // searchForm: 查询条件
 const searchForm = ref({
+  innerId: '',
   id: null,
   status: null,
   createTime: [], // 使用数组来存储时间范围
@@ -180,20 +190,26 @@ const onAddCancel = () => {
   dialogFormVisible.value = false
   dialogForm.customerName = ''
   dialogForm.innerId = ''
+  dialogForm.innerIds = ['']
   dialogForm.outerId = ''
   dialogForm.remark = ''
   dialogForm.purchaseRequired = true
 }
 
 // onAddConfirm: 确认新增订单
-const onAddConfirm = () => {
-  emit('onAdd', { ...dialogForm })
-  dialogFormVisible.value = false
-  dialogForm.customerName = ''
-  dialogForm.innerId = ''
-  dialogForm.outerId = ''
-  dialogForm.remark = ''
-  dialogForm.purchaseRequired = true
+const onAddConfirm = async () => {
+  if (saving.value || !await createFormRef.value?.validate().catch(() => false)) return
+  saving.value = true
+  try {
+    const innerIds = dialogForm.innerIds.map(code => code.trim())
+    await props.onCreateOrder({ ...dialogForm, innerId: innerIds[0], innerIds })
+    onAddCancel()
+    createFormRef.value?.clearValidate()
+  } catch {
+    // 保留未保存的编号，接口拦截器显示具体原因。
+  } finally {
+    saving.value = false
+  }
 }
 
 const importDialogVisible = ref(false)
@@ -227,6 +243,7 @@ const handleUpload = async (option: any) => {
   messageBox('success', null, res.msg || '导入成功')
 
   importDialogVisible.value = false
+  onSubmit()
 }
 
 const onDownloadTemplate = () => {

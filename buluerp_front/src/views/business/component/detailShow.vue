@@ -28,6 +28,13 @@
             </el-col>
           </el-row>
         </informationCard>
+        <informationCard title="订单内部编号">
+          <el-form ref="innerCodesFormRef" :model="innerCodeDraft" :rules="innerCodeRules">
+            <el-form-item prop="innerIds">
+              <InnerCodeEditor v-model="innerCodeDraft.innerIds" lock-primary entity-label="订单" />
+            </el-form-item>
+          </el-form>
+        </informationCard>
         <!-- 订单详情 -->
         <informationCard title="订单详情">
           <el-table :data="orderProduct" style="width: 100%; font-size: medium;">
@@ -65,7 +72,7 @@
     </div>
     <el-footer class="footer">
       <el-button @click="onBoxCancel">取消</el-button>
-      <el-button type="primary" @click="onBoxSubmit">提交</el-button>
+      <el-button type="primary" :loading="saving" @click="onBoxSubmit">提交</el-button>
     </el-footer>
 
     <el-dialog v-model="DialogVisible" title="新增分包" width="800px">
@@ -88,7 +95,11 @@
 
 <script setup lang="ts">
 import informationCard from './informationCard.vue'
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, ref, reactive, watch } from 'vue'
+import type { FormInstance } from 'element-plus'
+import InnerCodeEditor from '@/views/production/component/InnerCodeEditor.vue'
+import { getProductInnerCodes, validateProductInnerCodes } from '@/utils/productInnerCodes.js'
+import { getOrderDetailById } from '@/apis/orders'
 import { resMap } from '../utils/statusMap'
 import { getProductsByOrderId } from '../function/oders'
 import { getOrdersList, putOrder } from '@/apis/orders'
@@ -110,6 +121,15 @@ const props = defineProps<{
 
 }>()
 const tabStore = useTabStore()
+const innerCodesFormRef = ref<FormInstance>()
+const innerCodeRules = { innerIds: [{ validator: validateProductInnerCodes, trigger: ['blur', 'change'] }] }
+const innerCodeDraft = reactive({ innerIds: getProductInnerCodes(props.detail) })
+const savedInnerIds = ref([...innerCodeDraft.innerIds])
+const saving = ref(false)
+watch(() => props.detail, detail => {
+  savedInnerIds.value = getProductInnerCodes(detail)
+  innerCodeDraft.innerIds = [...savedInnerIds.value]
+})
 const orderDetail = computed(() => props.detail)
 const fields = ref()
 const statusText = ref()
@@ -409,7 +429,10 @@ getPackagingListByOrderId(props.orderCode).then((res) => {
 // //  页脚按钮
 // onBoxSubmit: 提交按钮
 const onBoxSubmit = async () => {
-  const submitData = { ...updateFields.value }
+  if (saving.value || !await innerCodesFormRef.value?.validate().catch(() => false)) return
+  saving.value = true
+  try {
+  const submitData = { ...updateFields.value, innerIds: innerCodeDraft.innerIds.map(code => code.trim()) }
   if (submitData.deliveryTime instanceof Date) {
     submitData.deliveryTime = dayjs(submitData.deliveryTime).format('YYYY-MM-DD')
   }
@@ -417,11 +440,21 @@ const onBoxSubmit = async () => {
   messageBox('success', null, '订单已成功提交')
 
 
-  getOrdersList()
+  const detail = await getOrderDetailById(props.id)
+  savedInnerIds.value = getProductInnerCodes(detail.data[0])
+  innerCodeDraft.innerIds = [...savedInnerIds.value]
+  tabStore.freshTab('订单列表')
+  } catch {
+    // 接口错误由拦截器提示，保留未保存的输入。
+  } finally {
+    saving.value = false
+  }
 }
 
 // onBoxCancel: 取消按钮
 const onBoxCancel = () => {
+  innerCodeDraft.innerIds = [...savedInnerIds.value]
+  innerCodesFormRef.value?.clearValidate()
   messageBox('success', null, '已取消提交')
 }
 </script>

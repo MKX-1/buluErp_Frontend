@@ -71,6 +71,8 @@ const form = reactive({
   drawingReferenceFile: null,//样例图
   modelFile: null,//STP文件
   materialType: '',//料别
+  materialTypeSelection: '',//料型下拉框的唯一选中值，不提交给后端
+  colorCode: '',//颜色编码，与所选料型同步
   materialCode: '',//物料编码
   materialName: '',//物料名称
   unit: '',//单位
@@ -119,6 +121,19 @@ const setStpFile = (file: File | null) => {
 
 const removeImage = () => setDrawingFile(null)
 const removeStp = () => setStpFile(null)
+
+const materialTypeOptionValue = (item: Record<string, any>) =>
+  `${item.name || item.materialType || ''}\u001f${item.colorCode || ''}`
+
+const materialTypeOptionLabel = (item: Record<string, any>) =>
+  `名称:${item.name || item.materialType || ''}  颜色编码:${item.colorCode || ''}  色粉重量:${item.colorWeight ?? ''}`
+
+const handleMaterialTypeChange = (_value: string, option: Record<string, any>) => {
+  if (!option?.raw) return
+  form.materialType = option.raw.name
+  form.colorCode = option.raw.colorCode
+}
+
 const formConfig = reactive([
   [
     { label: '模具编号', key: 'mouldNumber', type: 'input', width: 8, required: true, rules: [{ required: true, message: '请输入模具编号', trigger: 'blur' }] },
@@ -126,11 +141,12 @@ const formConfig = reactive([
     { label: '腔口数量', key: 'cavityCount', type: 'number', width: 8 }
   ],
   [
-    { type: 'inputSelect', label: '料型', key: 'materialType', width: 12,
-      remoteFunc: searchFunc('system/material-type/list', 'name'),
+    { type: 'inputSelect', label: '料型', key: 'materialTypeSelection', width: 12,
+      remoteFunc: searchFunc('system/material-type/list', 'name', materialTypeOptionValue),
       options: reactive([]),
       loading: ref(false),
       showKey:[{key:'name',label:"名称"},{key:'colorCode',label:"颜色编码"},{key:'colorWeight',label:"色粉重量"}],
+      onChange: handleMaterialTypeChange,
       rules: [{ required: true, message: '请输入料型', trigger: 'blur' }]
     },
     { label: '单重', key: 'singleWeight', type: 'number', width: 12 }
@@ -155,6 +171,22 @@ watch(visible, async (val) => {
   if (val && props.currentData) {
     await nextTick()
     Object.assign(form, props.currentData)
+    if (props.currentData.materialType) {
+      const currentOption = {
+        name: props.currentData.materialType,
+        colorCode: props.currentData.colorCode || '',
+        colorWeight: props.currentData.colorWeight,
+      }
+      form.materialTypeSelection = materialTypeOptionValue(currentOption)
+      formConfig[1][0].options = [{
+        label: materialTypeOptionLabel(currentOption),
+        value: form.materialTypeSelection,
+        raw: currentOption,
+      }]
+    } else {
+      form.materialTypeSelection = ''
+      formConfig[1][0].options = []
+    }
     // 图片回显
     if (props.currentData.drawingReference) {
       imageUrl.value = getFullImageUrl(props.currentData.drawingReference)
@@ -196,6 +228,7 @@ const handleSubmit = () => {
 
     const formData = new FormData()
     for (const key in form) {
+      if (key === 'materialTypeSelection') continue
       if (key === 'drawingReferenceFile') {
         if (drawingFile.value) formData.append('drawingReferenceFile', drawingFile.value)
         else if (typeof form.drawingReferenceFile === 'string') formData.append('drawingReference', form.drawingReferenceFile)

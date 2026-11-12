@@ -48,6 +48,9 @@ export function updateProduct(data) {
   const formData = new FormData()
 
   formData.append('id', String(data.id))
+  if (Array.isArray(data.innerIds)) {
+    data.innerIds.forEach((code, index) => formData.append(`innerIds[${index}]`, code.trim()))
+  }
 
   if (data.name !== undefined && data.name !== null && String(data.name).trim() !== '') {
     formData.append('name', data.name)

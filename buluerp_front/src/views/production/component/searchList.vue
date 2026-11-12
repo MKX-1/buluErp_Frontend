@@ -68,6 +68,7 @@ const handleSizeChange = (val: number) => {
 const tableData = [
   { label: '创建时间', value: 'createTime', type: 'text' },
   { label: '产品编码', value: 'id', type: 'text' },
+  { label: '内部编号', value: 'innerIds', type: 'innerCodes' },
   { label: '产品名称', value: 'name', type: 'text' },
   {
     label: '产品状态',

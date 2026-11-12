@@ -12,6 +12,9 @@
     <img v-if="imgShowUrl" :src="imgShowUrl" class="cover" style="width: 150px; height: 150px" />
     <div v-else class="centerText">上传样例图</div>
   </el-upload>
+  <el-button v-if="allowRemove && imgShowUrl" link type="danger" @click="handleFileRemove">
+    移除图片
+  </el-button>
 </template>
 <script setup lang="ts">
 import { onBeforeUnmount, ref, watch } from 'vue'
@@ -19,7 +22,7 @@ import { ElMessage, genFileId } from 'element-plus'
 import type { UploadProps } from 'element-plus'
 import { getFullImageUrl } from '@/utils/image/getUrl'
 
-const props = defineProps(['setFile', 'ImgUrl', 'setImgUrl', 'onRemove'])
+const props = defineProps(['setFile', 'ImgUrl', 'setImgUrl', 'onRemove', 'allowRemove'])
 const imgShowUrl = ref('')
 const upload = ref()
 let objectUrl = ''
@@ -58,6 +61,7 @@ const handleFileChange: UploadProps['onChange'] = (file) => {
   props.setImgUrl('created')
 }
 const handleFileRemove = () => {
+  upload.value?.clearFiles()
   revokeObjectUrl()
   imgShowUrl.value = ''
   props.setFile(null)

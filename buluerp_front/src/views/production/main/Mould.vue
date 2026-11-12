@@ -112,11 +112,11 @@
     </el-dialog>
 
     <!-- 新增 / 编辑弹窗 -->
-    <el-dialog v-model="editDialogVisible" :title="title" width="800px">
+    <el-dialog v-model="editDialogVisible" :title="title" width="800px" destroy-on-close>
       <CreateForm :data="dynamicFormData" :Formvalue="newSubmit" ref="createFormRef" />
       <template #footer>
         <div class="dialog-footer">
-          <el-button type="primary" @click="handleSubmit">确认</el-button>
+          <el-button type="primary" :loading="editSubmitting" @click="handleSubmit">确认</el-button>
           <el-button @click="() => (editDialogVisible = false)">取消</el-button>
         </div>
       </template>
@@ -136,6 +136,7 @@
         <div class="el-upload__text">将文件拖到此处，或 <em>点击上传</em></div>
         <template #tip>
           <div class="el-upload__tip">只能上传 xls/xlsx 文件，大小不超过 500MB</div>
+          <div class="el-upload__tip">“模具图片”为选填列，请将图片插入对应数据行，左上角放在该列单元格内；每个模具一张图片。</div>
         </template>
       </el-upload>
     </el-dialog>
@@ -205,11 +206,14 @@ const searchContent = ref({
   manufacturerName: '',
   status: '',
 })
+// 批量范围使用已加载列表的条件，避免修改搜索框但未查询时误更新其他记录。
+const appliedFilters = ref({ ...searchContent.value })
 
 // 表格列
 const tableData = ref([
   { value: 'id', label: 'id', type: 'text' },
   { value: 'mouldNumber', label: '模具编号', type: 'text' },
+  { value: 'pictureUrl', label: '模具图片', type: 'picture', preview: true },
   { value: 'manufacturerName', label: '模具厂商', type: 'text' },
   { value: 'trialDate', label: '试模日期', type: 'text' },
   {
@@ -221,16 +225,20 @@ const tableData = ref([
 ])
 
 // 表单绑定对象
-const newSubmit = ref({
+const newSubmit = ref<Record<string, any>>({
   mouldNumber: '',
   manufacturerId: '',
   trialDate: '',
   status: '',
   remark: '',
+  picture: null,
+  pictureUrl: '',
+  deletePicture: false,
 })
 
 // 弹窗显示与表单结构
 const editDialogVisible = ref(false)
+const editSubmitting = ref(false)
 const title = ref('新增')
 const createFormRef = ref()
 const dynamicFormData = ref([])
@@ -259,9 +267,9 @@ const batchAffectedCount = computed(() =>
 
 const activeFilterTags = computed(() => {
   const tags = []
-  if (searchContent.value.mouldNumber) tags.push(`模具编号：${searchContent.value.mouldNumber}`)
-  if (searchContent.value.manufacturerName) tags.push(`模具厂商：${searchContent.value.manufacturerName}`)
-  if (searchContent.value.status) tags.push(`原状态：${searchContent.value.status}`)
+  if (appliedFilters.value.mouldNumber) tags.push(`模具编号：${appliedFilters.value.mouldNumber}`)
+  if (appliedFilters.value.manufacturerName) tags.push(`模具厂商：${appliedFilters.value.manufacturerName}`)
+  if (appliedFilters.value.status) tags.push(`原状态：${appliedFilters.value.status}`)
   return tags
 })
 
@@ -285,6 +293,7 @@ const openBatchStatusDialog = async () => {
 }
 
 const submitBatchStatus = async () => {
+  if (batchSubmitting.value) return
   if (batchAffectedCount.value === 0) {
     ElMessage.warning('当前没有可更新的模具')
     return
@@ -302,9 +311,24 @@ const submitBatchStatus = async () => {
     ? `已勾选的 ${selectedMoulds.value.length} 条记录`
     : `当前查询结果的 ${total.value} 条记录`
 
+  const payload = {
+    scope: batchForm.value.scope,
+    ids: batchForm.value.scope === 'selected'
+      ? selectedMoulds.value.map((item) => item.id)
+      : undefined,
+    filters: batchForm.value.scope === 'filtered'
+      ? { ...appliedFilters.value }
+      : undefined,
+    status: batchForm.value.status,
+    mouldHouseId: batchForm.value.status === '模具故障送修中'
+      ? batchForm.value.mouldHouseId
+      : undefined,
+  }
+
+  batchSubmitting.value = true
   try {
     await ElMessageBox.confirm(
-      `确认将${scopeText}更新为“${batchForm.value.status}”吗？`,
+      `确认将${scopeText}更新为“${payload.status}”吗？`,
       '批量更新确认',
       {
         confirmButtonText: '确认更新',
@@ -312,32 +336,13 @@ const submitBatchStatus = async () => {
         type: 'warning',
       },
     )
-
-    const payload = {
-      scope: batchForm.value.scope,
-      ids: batchForm.value.scope === 'selected'
-        ? selectedMoulds.value.map((item) => item.id)
-        : undefined,
-      filters: batchForm.value.scope === 'filtered'
-        ? { ...searchContent.value }
-        : undefined,
-      status: batchForm.value.status,
-      mouldHouseId: batchForm.value.status === '模具故障送修中'
-        ? batchForm.value.mouldHouseId
-        : undefined,
-    }
-
-    batchSubmitting.value = true
     const res = await batchUpdateMouldStatus(payload)
     ElMessage.success(res.msg || `成功更新 ${batchAffectedCount.value} 条模具`)
     batchDialogVisible.value = false
     tableListRef.value?.clearSelection?.()
     loadData()
-  } catch (error) {
-    if (error !== 'cancel' && error !== 'close') {
-      const message = error?.response?.data?.msg || error?.msg || '批量更新失败'
-      ElMessage.error(message)
-    }
+  } catch {
+    // 取消确认无需提示；请求失败已由 httpInstance 统一提示，避免重复弹窗。
   } finally {
     batchSubmitting.value = false
   }
@@ -345,11 +350,13 @@ const submitBatchStatus = async () => {
 
 // 加载数据
 const loadData = () => {
+  const filters = { ...searchContent.value }
   getMouldList({
     pageNum: page.value,
     pageSize: pageSize.value,
-    ...searchContent.value,
+    ...filters,
   }).then((res) => {
+    appliedFilters.value = filters
     listData.value = res.rows.map((item) => ({ ...item }))
     total.value = res.total
   })
@@ -368,6 +375,9 @@ const onCreate = () => {
     trialDate: '',
     status: '',
     remark: '',
+    picture: null,
+    pictureUrl: '',
+    deletePicture: false,
   }
 
   dynamicFormData.value = [
@@ -391,6 +401,9 @@ const onCreate = () => {
     ],
   ]
 
+  dynamicFormData.value.push([
+    { type: 'image', label: '模具图片', key: 'picture', deleteKey: 'deletePicture', width: 24 },
+  ])
   editDialogVisible.value = true
   nextTick(() => createFormRef.value.clearValidate())
 }
@@ -398,7 +411,7 @@ const onCreate = () => {
 // 编辑行数据
 const editRow = (row) => {
   title.value = '编辑'
-  newSubmit.value = { ...row }
+  newSubmit.value = { ...row, picture: null, deletePicture: false }
 
   dynamicFormData.value = [
     [
@@ -452,6 +465,9 @@ const editRow = (row) => {
     ],
   ]
 
+  dynamicFormData.value.push([
+    { type: 'image', label: '模具图片', key: 'picture', deleteKey: 'deletePicture', width: 24 },
+  ])
   editDialogVisible.value = true
   nextTick(() => createFormRef.value.clearValidate())
 }
@@ -463,6 +479,7 @@ const operation = ref([
 
 // 提交表单
 const handleSubmit = () => {
+  if (editSubmitting.value) return
   createFormRef.value.validateForm((valid) => {
     if (!valid) return
 
@@ -478,11 +495,14 @@ const handleSubmit = () => {
     const payload = { ...newSubmit.value }
     const api = title.value === '编辑' ? updateMould : createMould
 
+    editSubmitting.value = true
     api(payload).then((res) => {
       ElMessage.success(res.msg || '操作成功')
       editDialogVisible.value = false
       loadData()
-    })
+    }).catch(() => {
+      // 请求错误由通用拦截器提示，保留表单供重试。
+    }).finally(() => { editSubmitting.value = false })
   })
 }
 

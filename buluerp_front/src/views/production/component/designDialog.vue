@@ -93,7 +93,7 @@ const handleSearchProduct = async (_item, query: string) => {
     const res = await getList_pro({ innerId: query })
     productOptions = (res.rows || []).map((item: any) => ({
       value: item.innerId,
-      label: `${item.innerId} - ${item.name || ''}`,
+      label: `${(item.innerIds?.length ? item.innerIds : [item.innerId]).join(' / ')} - ${item.name || ''}`,
     }))
   } finally {
     productLoading = false

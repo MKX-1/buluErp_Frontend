@@ -3,11 +3,11 @@
     <el-config-provider :locale="zhCn">
       <BordShow content="业务订单查询列表" path="业务中心/查询" />
       <div class="greyBack">
-        <QueryForm @onSubmit="handleQuery" @onAdd="handleAdd" @customerSuggestions="customerSuggestions"
+        <QueryForm @onSubmit="handleQuery" :onCreateOrder="handleAdd" @customerSuggestions="customerSuggestions"
           @checkCustomerName="checkCustomerName"></QueryForm>
         <QueryTable :addTab="props.addTab" :pagination="pagination" :tableData="tableData"
           @onPageChange="handlePageChange" @onPageSizeChange="handleSizeChange" @fetchData="fetchTableData"
-          @onUpdated="handleUpdate" @customerSuggestions="customerSuggestions" @checkCustomerName="checkCustomerName">
+          @onUpdated="handleUpdate" :onUpdateOrder="handleUpdate" @customerSuggestions="customerSuggestions" @checkCustomerName="checkCustomerName">
         </QueryTable>
       </div>
     </el-config-provider>

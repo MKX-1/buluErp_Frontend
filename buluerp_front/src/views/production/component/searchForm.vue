@@ -16,8 +16,8 @@
       <el-form-item label="产品名称" prop="name">
         <el-input v-model="createForm.name" placeholder="请输入产品名称" />
       </el-form-item>
-      <el-form-item label="内部编号" prop="innerId">
-        <el-input v-model="createForm.innerId" placeholder="请输入内部编号" />
+      <el-form-item label="内部编号" prop="innerIds">
+        <InnerCodeEditor v-model="createForm.innerIds" />
       </el-form-item>
       <el-form-item label="外部编号" prop="outerId">
         <el-input v-model="createForm.outerId" placeholder="请输入外部编号" />
@@ -66,6 +66,8 @@ import { createProduct, importProductFile, getProductTemplate } from '@/apis/pro
 import { downloadBinaryFile } from '@/utils/file/base64'
 import { messageBox } from '@/components/message/messageBox'
 import Form from '@/components/form/Form.vue'
+import InnerCodeEditor from './InnerCodeEditor.vue'
+import { validateProductInnerCodes } from '@/utils/productInnerCodes.js'
 
 const emit = defineEmits(['search', 'created'])
 
@@ -96,6 +98,9 @@ const data = reactive([
   ],
   [
     {
+      label: '内部编号', type: 'input', key: 'innerId',
+    },
+    {
       label: '产品名称',
       type: 'input',
       key: 'productName',
@@ -112,6 +117,7 @@ const title = '查询'
 
 // 表单状态
 const formState = reactive({
+  innerId: '',
   productCode: '',
   productStatus: '',
   createDate: [],
@@ -133,7 +139,7 @@ const searchForm = ref({
 const createDialogVisible = ref(false)
 const createForm = reactive({
   name: '',
-  innerId: '',
+  innerIds: [''],
   outerId: '',
   materialId: '',
   image: '',
@@ -144,9 +150,7 @@ const createFormRules = {
   name: [
     { required: true, whitespace: true, message: '请输入产品名称', trigger: 'blur' },
   ],
-  innerId: [
-    { required: true, whitespace: true, message: '请输入内部编号', trigger: 'blur' },
-  ],
+  innerIds: [{ validator: validateProductInnerCodes, trigger: ['blur', 'change'] }],
   outerId: [
     { required: true, whitespace: true, message: '请输入外部编号', trigger: 'blur' },
   ],
@@ -161,6 +165,7 @@ const importDialogVisible = ref(false)
 // 方法
 const onSubmit = () => {
   const params = {
+    innerId: (formState.innerId || '').trim(),
     productCode: formState.productCode || '',
     productName: formState.productName || '',
     productStatus: formState.productStatus,
@@ -190,7 +195,8 @@ const handleCreateSubmit = async () => {
 
   const formData = new FormData()
   formData.append('name', createForm.name)
-  formData.append('innerId', createForm.innerId)
+  formData.append('innerId', createForm.innerIds[0].trim())
+  createForm.innerIds.forEach((code, index) => formData.append(`innerIds[${index}]`, code.trim()))
   formData.append('outerId', createForm.outerId)
 
   if (String(createForm.materialId).trim() !== '') {
@@ -220,7 +226,7 @@ const resetCreateForm = () => {
   createForm.name = ''
   createForm.image = ''
   createForm.outerId = ''
-  createForm.innerId = ''
+  createForm.innerIds = ['']
   createForm.materialId = ''
   imageFile.value = null
   createFormRef.value?.clearValidate?.()
@@ -252,6 +258,7 @@ const handleUpload = async (option: any) => {
     () =>
       importProductFile(formData).then((res) => {
         importDialogVisible.value = false
+        emit('created')
         return Promise.resolve()
       }),
     '导入成功',

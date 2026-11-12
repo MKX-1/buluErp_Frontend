@@ -1,5 +1,6 @@
 <template>
     <div id="webgl" ref="webgl" class="three-container">
+      <div v-if="status !== 'ready'" class="model-status" role="status">{{ status === 'loading' ? '模型加载中…' : status === 'error' ? '3D模型加载失败，请刷新重试' : '暂无模型' }}</div>
     </div>
 </template>
 <script setup>
@@ -7,8 +8,13 @@ import * as THREE from 'three'
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
 import { onMounted, onBeforeUnmount, ref, watch } from 'vue'
+import { getModelUrl } from '@/utils/modelUrl'
 
 const webgl = ref(null)
+const status = ref('loading')
+let requestId = 0
+let disposed = false
+let cleanupModel = () => {}
 let animationId = null
 let renderer = null
 let camera = null
@@ -24,8 +30,8 @@ onMounted(() => {
   if (!webgl.value) return
   
   // 动态获取容器的宽高，而不是写死 800x600
-  const width = webgl.value.clientWidth
-  const height = webgl.value.clientHeight
+  const width = Math.max(webgl.value.clientWidth, 1)
+  const height = Math.max(webgl.value.clientHeight, 1)
   
   //场景
   const scene = new THREE.Scene()
@@ -62,55 +68,62 @@ onMounted(() => {
   })
   controls.enableDamping = true
 
-  const geometryBox = new THREE.BoxGeometry(10, 10, 10)
-  const materialBox = new THREE.MeshLambertMaterial({
-    color: 0x0000ff,
-    transparent: true,
-  })
-  const cube = new THREE.Mesh(geometryBox, materialBox)
-  cube.position.set(0, 10, 0)
-  scene.add(cube)
-
   let loadedMesh = null
+  const disposeModel = model => model?.traverse(object => {
+    object.geometry?.dispose()
+    const materials = Array.isArray(object.material) ? object.material : [object.material]
+    materials.filter(Boolean).forEach(material => {
+      Object.values(material).forEach(value => { if (value?.isTexture) value.dispose() })
+      material.dispose()
+    })
+  })
+  cleanupModel = () => { controls.dispose(); disposeModel(loadedMesh) }
 
   // 抽取加载模型的逻辑到一个单独的函数中
   const loadModel = () => {
+    const currentRequest = ++requestId
     // 如果已经加载了模型，先从场景中移除并清理内存
     if (loadedMesh) {
       scene.remove(loadedMesh)
-      if (loadedMesh.geometry) loadedMesh.geometry.dispose()
-      if (loadedMesh.material) {
-        if (Array.isArray(loadedMesh.material)) {
-          loadedMesh.material.forEach(m => m.dispose())
-        } else {
-          loadedMesh.material.dispose()
-        }
-      }
+      disposeModel(loadedMesh)
       loadedMesh = null
     }
 
-    // 重新显示备用立方体（加载中状态）
-    cube.visible = true
+    status.value = props.modelUrl ? 'loading' : 'empty'
+    if (!props.modelUrl) return
 
     const loader = new GLTFLoader()
-    const modelPath = props.modelUrl
-    console.log(modelPath)
+    const modelPath = getModelUrl(props.modelUrl)
     
     loader.load(modelPath, (gltf) => {
       const model = gltf.scene
+      if (disposed || currentRequest !== requestId) { disposeModel(model); return }
+      const bounds = new THREE.Box3().setFromObject(model)
+      const center = bounds.getCenter(new THREE.Vector3())
+      model.position.sub(center)
+      const radius = Math.max(bounds.getSize(new THREE.Vector3()).length() / 2, 0.001)
+      const halfFov = THREE.MathUtils.degToRad(camera.fov / 2)
+      const angle = Math.min(halfFov, Math.atan(Math.tan(halfFov) * camera.aspect))
+      const distance = radius / Math.sin(angle) * 1.15
+      camera.position.copy(new THREE.Vector3(1, 0.7, 1).normalize().multiplyScalar(distance))
+      camera.near = Math.max(radius / 1000, 0.00001)
+      camera.far = distance + radius * 10
+      camera.updateProjectionMatrix()
+      controls.target.set(0, 0, 0)
+      controls.update()
       scene.add(model)
       loadedMesh = model
-      cube.visible = false
+      status.value = 'ready'
     }, undefined, (error) => {
-      console.warn('GLTFLoader 模型加载失败，显示绿色立方体代替。', error)
+      if (disposed || currentRequest !== requestId) return
+      status.value = 'error'
+      console.warn('3D模型加载失败', error)
     })
   }
   loadModel()
   // 监听属性变化，如果 URL 改变了重新加载
   watch(() => props.modelUrl, (newUrl) => {
-    if (newUrl) {
-      loadModel()
-    }
+    loadModel()
   })
 
   const animate = () => {
@@ -118,8 +131,6 @@ onMounted(() => {
     controls.update()
     if (loadedMesh) {
       loadedMesh.rotateY(0.01)
-    } else {
-      cube.rotateY(0.01) 
     }
     renderer.render(scene, camera)
   }
@@ -145,6 +156,9 @@ const onWindowResize = () => {
 }
 
 onBeforeUnmount(() => {
+  disposed = true
+  ++requestId
+  cleanupModel()
   if (animationId) cancelAnimationFrame(animationId)
   if (renderer) renderer.dispose()
   if (resizeObserver && webgl.value) resizeObserver.disconnect()
@@ -152,9 +166,11 @@ onBeforeUnmount(() => {
 </script>
 <style scoped>
 .three-container {
+  position: relative;
   width: 100%;
   height: 100%;
   border-radius: 8px;
   overflow: hidden;
 }
+.model-status { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; text-align: center; font-size: 12px; color: #909399; z-index: 1; }
 </style>

@@ -12,7 +12,8 @@ export function addMaterial(data) {
   return httpInstance({
     url: 'system/material-info',
     method: 'post',
-    data
+    data,
+    timeout: 200000
   })
 }
 
@@ -20,7 +21,8 @@ export function addPurMaterial(data) {
   return httpInstance({
     url: 'system/material-info/purchased',
     method: 'post',
-    data
+    data,
+    timeout: 200000
   })
 }
 
@@ -28,7 +30,8 @@ export function updateMaterial(data) {
   return httpInstance({
     url: 'system/material-info',
     method: 'PUT',
-    data: data
+    data: data,
+    timeout: 200000
   })
 }
 

@@ -8,12 +8,17 @@ import { messageBox } from '@/components/message/messageBox' // 替换弹窗组�
 import { getFullImageUrl } from '@/utils/image/getUrl'
 import uploadPicture from '@/components/upload/editUpload.vue'
 import useTabStore from '@/stores/modules/tabs'
+import InnerCodeEditor from './InnerCodeEditor.vue'
+import { getProductInnerCodes, validateProductInnerCodes } from '@/utils/productInnerCodes.js'
 
 const props = defineProps<{
   detail: any
   materialData: any[]
 }>()
 
+const emit = defineEmits(['saved'])
+const saving = ref(false)
+const mainFormRules = { innerIds: [{ validator: validateProductInnerCodes, trigger: ['blur', 'change'] }] }
 const tableData = ref<MaterialItem[]>([])
 const dialogVisible = ref(false)
 const editingIndex = ref<number | null>(null)
@@ -39,7 +44,7 @@ const mainFormState = reactive({
   orderId: '',
   productName: '',
   productIntro: '',
-  innerId: '',
+  innerIds: [''],
   outerId: '',
   designStatus: 0,
 })
@@ -59,13 +64,11 @@ const refreshData = async () => {
     originalProductName.value = val.name || ''
     mainFormState.orderId = val.orderId || ''
     mainFormState.designStatus = Number(val.designStatus ?? 0)
-    mainFormState.innerId = val.innerId || ''
+    mainFormState.innerIds = getProductInnerCodes(val)
     mainFormState.outerId = val.outerId || ''
 
-    if (val.pictureUrl) {
-      pictureUrl.value = getFullImageUrl(val.pictureUrl)
-      pictureFile.value = null
-    }
+    pictureUrl.value = val.pictureUrl ? getFullImageUrl(val.pictureUrl) : ''
+    pictureFile.value = null
 
     try {
       const res = await searchDesignDetail(val.id)
@@ -131,12 +134,14 @@ const deleteImage = () => {
 
 
 const submitMainForm = async () => {
-  if (!mainFormRef.value) return
+  if (!mainFormRef.value || saving.value) return
 
   try {
     await mainFormRef.value.validate()
 
+    saving.value = true
     const payload: any = {
+      innerIds: mainFormState.innerIds.map(code => code.trim()),
       id: Number(props.detail?.id),
       name: mainFormState.productName,
       deletePicture: 0, // 默认保留图片
@@ -150,6 +155,7 @@ const submitMainForm = async () => {
 
 
     await updateProduct(payload)
+    emit('saved')
 
     tabStore.freshTab('产品查询')
 
@@ -163,16 +169,19 @@ const submitMainForm = async () => {
     messageBox('success', null, '提交成功', '', '')
   } catch (err) {
     messageBox('error', null, '', '提交失败', '')
+  } finally {
+    saving.value = false
   }
 }
 
 const onClear = () => {
-  mainFormRef.value?.resetFields()
+  refreshData()
+  mainFormRef.value?.clearValidate()
   fileList.value = []
 }
 
 const onCancel = () => {
-  console.log('取消按钮点击')
+  onClear()
 }
 
 interface MaterialItem {
@@ -186,7 +195,7 @@ interface MaterialItem {
 </script>
 
 <template>
-  <el-form ref="mainFormRef" :model="mainFormState" label-width="120px" class="greyBack">
+  <el-form ref="mainFormRef" :model="mainFormState" :rules="mainFormRules" label-width="120px" class="greyBack">
     <el-card>
       <template #header>
         <div class="card-header">业务订单基础信息</div>
@@ -204,8 +213,8 @@ interface MaterialItem {
           </el-form-item>
         </el-col>
         <el-col :span="8">
-          <el-form-item label="内部编号" prop="innerId">
-            <el-input v-model="mainFormState.innerId" placeholder="请输入" />
+          <el-form-item label="内部编号" prop="innerIds">
+            <InnerCodeEditor v-model="mainFormState.innerIds" lock-primary />
           </el-form-item>
         </el-col>
       </el-row>
@@ -253,7 +262,7 @@ interface MaterialItem {
       <div style="text-align: right; margin-top: 20px">
         <el-space>
           <el-button @click="onCancel">取消</el-button>
-          <el-button type="primary" @click="submitMainForm">提交</el-button>
+          <el-button type="primary" :loading="saving" @click="submitMainForm">提交</el-button>
           <el-button @click="onClear">重置</el-button>
         </el-space>
       </div>

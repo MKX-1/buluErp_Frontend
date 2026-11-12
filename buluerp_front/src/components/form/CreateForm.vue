@@ -67,6 +67,13 @@
             "
             default-first-option
             :loading="ele.loading"
+            @change="
+              (value) => {
+                if (ele.onChange) {
+                  ele.onChange(value, ele.options.find((option) => option.value === value), Formvalue)
+                }
+              }
+            "
           >
             <el-option
               v-for="item in ele.options"
@@ -116,6 +123,7 @@
         </el-form-item>
         <el-form-item :label="ele.label" v-else-if="ele.type === 'image'" :prop="ele.key">
           <upload
+            :allowRemove="!!ele.deleteKey"
             :setFile="
               (file: File | null) => {
                 Formvalue[ele.key] = file

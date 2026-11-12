@@ -1,4 +1,5 @@
 import httpInstance from "@/utils/httpsInstance"
+import { toMouldFormData } from '@/utils/mouldFormData'
 
 export function getMouldList(params) {
   return httpInstance({
@@ -22,10 +23,8 @@ export function createMould(data) {
   return httpInstance({
     url: 'system/mould/with-manufacturer',
     method: 'post',
-    data,
-    headers: {
-      'Content-Type': 'application/json'
-    }
+    data: toMouldFormData(data),
+    timeout: 120000,
   })
 }
 export function deleteMould(ids) {
@@ -41,7 +40,8 @@ export function updateMould(data) {
   return httpInstance({
     url: 'system/mould',
     method: 'PUT',
-    data: data
+    data: toMouldFormData(data),
+    timeout: 120000,
   })
 }
 
@@ -49,6 +49,7 @@ export function batchUpdateMouldStatus(data) {
   return httpInstance({
     url: 'system/mould/batch-status',
     method: 'PUT',
+    timeout: 120000,
     data
   })
 }
