@@ -137,6 +137,16 @@ const router = createRouter({
           component: BlankComponent,
         },
         {
+          path: '/PMProduceArchive',
+          name: 'PMProduceArchive',
+          component: BlankComponent,
+        },
+        {
+          path: '/PMProduceArchiveDetail/:id',
+          name: 'PMProduceArchiveDetail',
+          component: BlankComponent,
+        },
+        {
           path: '/PMProducePackaging',
           name: 'PMProducePackaging',
           component: BlankComponent,

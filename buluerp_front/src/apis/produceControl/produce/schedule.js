@@ -2,7 +2,7 @@ import httpInstance from '@/utils/httpsInstance.js'
 let headers = { Authorization: `${localStorage.getItem('Authorization')}` }
 
 export function listScheduleByOrderCode(orderCode) {
-  let searchText=`system/products-schedule/list?orderCode=${orderCode}`
+  let searchText=`system/products-schedule/list?orderCode=${orderCode}&includeCompletedOrders=true`
   return function(pageNum, pageSize, searchContent = {}){
     let concatText = Object.keys(searchContent)
     .map((key) => {
@@ -36,7 +36,7 @@ export function finishSchedule(data) {
 }
 export function getScheduleListByOrderId(orderId) {
   return httpInstance({
-    url: `system/products-schedule/list?orderCodeExact=${orderId}`,
+    url: `system/products-schedule/list?orderCodeExact=${orderId}&includeCompletedOrders=true`,
     method: 'get',
     headers: headers,
   })
@@ -87,7 +87,7 @@ export function listSchedule(pageNum, pageSize, searchContent = {}) {
     })
     .join('')
   return httpInstance({
-    url: `system/products-schedule/list?orderByColumn=orderCode&pageNum=${pageNum}&pageSize=${pageSize}${concatText}`,
+    url: `system/products-schedule/list?orderByColumn=orderCode&includeCompletedOrders=false&pageNum=${pageNum}&pageSize=${pageSize}${concatText}`,
     method: 'get',
     headers: headers,
   })

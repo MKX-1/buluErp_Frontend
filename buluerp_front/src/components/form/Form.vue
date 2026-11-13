@@ -15,11 +15,7 @@
             <el-button @click="onClear">重置</el-button>
           </el-row>
           <el-row>
-            <el-button
-              type="primary"
-              @click="onCreate"
-              style="width: auto"
-              v-if="onCreate"
+            <el-button type="primary" @click="onCreate" style="width: auto" v-if="onCreate"
               >新建</el-button
             >
             <el-button @click="onImport" v-if="onImport">导入</el-button>
@@ -48,12 +44,14 @@ const props = defineProps([
   'onDownloadTemplate',
   'formState',
   'searchForm',
+  'onReset',
 ])
 const onClear = () => {
   // props.searchForm = {}
   Object.keys(props.searchForm)?.forEach((key) => {
     props.searchForm[key] = ''
   })
+  if (props.onReset) props.onReset()
 }
 </script>
 

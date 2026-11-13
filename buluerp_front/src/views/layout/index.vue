@@ -54,6 +54,8 @@ const ComponentsGroup = {
   PMProcurementOut: () => import('@/views/PMcenter/procurement/main/Outpurchase.vue'),
   PMProduceArrange: () => import('@/views/PMcenter/produce/main/Arrange.vue'),
   PMProduceSchedule: () => import('@/views/PMcenter/produce/main/Schedule.vue'),
+  PMProduceArchive: () => import('@/views/PMcenter/produce/main/CompletedOrders.vue'),
+  PMProduceArchiveDetail: () => import('@/views/PMcenter/produce/main/CompletedOrderDetail.vue'),
   PMProducePackaging: () => import('@/views/PMcenter/produce/main/Packaging.vue'),
   PMProducePackagingDetail: () => import('@/views/PMcenter/produce/component/PackagingDetail.vue'),
 }

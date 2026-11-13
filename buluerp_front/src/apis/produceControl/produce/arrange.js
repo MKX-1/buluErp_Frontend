@@ -49,7 +49,7 @@ export function listArrange(pageNum, pageSize, searchContent = {}) {
     })
     .join('')
   return httpInstance({
-    url: `system/production-arrange/list?pageNum=${pageNum}&pageSize=${pageSize}${concatText}`,
+    url: `system/production-arrange/list?includeCompletedOrders=false&pageNum=${pageNum}&pageSize=${pageSize}${concatText}`,
     method: 'get',
     headers: headers,
   })
