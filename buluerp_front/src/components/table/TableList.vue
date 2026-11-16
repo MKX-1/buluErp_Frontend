@@ -54,6 +54,7 @@
                 :src="getFullImageUrl(row[item.value])"
                 :preview-src-list="item.preview ? [getFullImageUrl(row[item.value])] : []"
                 :preview-teleported="!!item.preview"
+                fit="contain"
                 style="width: 50px; height: 50px"
                 @click="!item.preview && donwLoadFile(getFullImageUrl(row[item.value]))"
               />
