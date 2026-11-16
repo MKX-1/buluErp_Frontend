@@ -9,6 +9,7 @@ import {
   listArchiveSchedules,
 } from '@/apis/produceControl/produce/archive'
 import { downloadBinaryFile } from '@/utils/file/base64'
+import { getFullImageUrl } from '@/utils/image/getUrl'
 import { parseTime } from '@/utils/ruoyi'
 
 const props = defineProps<{ data: any }>()
@@ -283,6 +284,21 @@ loadArranges()
               :searchForm="scheduleSearch"
             />
             <el-table v-loading="scheduleLoading" :data="scheduleData" border style="width: 100%">
+              <el-table-column label="图片" width="80" align="center">
+                <template #default="{ row }">
+                  <el-image
+                    v-if="row.pictureUrl"
+                    :src="getFullImageUrl(row.pictureUrl)"
+                    :preview-src-list="[getFullImageUrl(row.pictureUrl)]"
+                    preview-teleported
+                    fit="contain"
+                    class="record-image"
+                  >
+                    <template #error><span class="image-placeholder">暂无</span></template>
+                  </el-image>
+                  <span v-else class="image-placeholder">暂无</span>
+                </template>
+              </el-table-column>
               <el-table-column
                 v-for="column in scheduleColumns"
                 :key="column.prop"
@@ -314,6 +330,21 @@ loadArranges()
               :searchForm="arrangeSearch"
             />
             <el-table v-loading="arrangeLoading" :data="arrangeData" border style="width: 100%">
+              <el-table-column label="图片" width="80" align="center">
+                <template #default="{ row }">
+                  <el-image
+                    v-if="row.pictureUrl"
+                    :src="getFullImageUrl(row.pictureUrl)"
+                    :preview-src-list="[getFullImageUrl(row.pictureUrl)]"
+                    preview-teleported
+                    fit="contain"
+                    class="record-image"
+                  >
+                    <template #error><span class="image-placeholder">暂无</span></template>
+                  </el-image>
+                  <span v-else class="image-placeholder">暂无</span>
+                </template>
+              </el-table-column>
               <el-table-column
                 v-for="column in arrangeColumns"
                 :key="column.prop"
@@ -353,6 +384,17 @@ loadArranges()
 }
 
 .source-note {
+  color: #909399;
+  font-size: 12px;
+}
+
+.record-image {
+  width: 50px;
+  height: 50px;
+  border-radius: 4px;
+}
+
+.image-placeholder {
   color: #909399;
   font-size: 12px;
 }
