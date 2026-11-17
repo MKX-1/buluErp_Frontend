@@ -87,7 +87,7 @@ export function listSchedule(pageNum, pageSize, searchContent = {}) {
     })
     .join('')
   return httpInstance({
-    url: `system/products-schedule/list?orderByColumn=orderCode&includeCompletedOrders=false&pageNum=${pageNum}&pageSize=${pageSize}${concatText}`,
+    url: `system/products-schedule/list?includeCompletedOrders=false&pageNum=${pageNum}&pageSize=${pageSize}${concatText}`,
     method: 'get',
     headers: headers,
   })
