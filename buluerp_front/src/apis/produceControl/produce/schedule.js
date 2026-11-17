@@ -1,14 +1,17 @@
 import httpInstance from '@/utils/httpsInstance.js'
 let headers = { Authorization: `${localStorage.getItem('Authorization')}` }
 
-export function listScheduleByOrderCode(orderCode) {
-  let searchText=`system/products-schedule/list?orderCode=${orderCode}&includeCompletedOrders=true`
-  return function(pageNum, pageSize, searchContent = {}){
-    let concatText = Object.keys(searchContent)
-    .map((key) => {
-      return `&${key}=${searchContent[key]}`
-    })
+function buildSearchQuery(searchContent = {}) {
+  return Object.entries(searchContent)
+    .filter(([, value]) => value !== null && value !== undefined && value !== '')
+    .map(([key, value]) => `&${encodeURIComponent(key)}=${encodeURIComponent(value)}`)
     .join('')
+}
+
+export function listScheduleByOrderCode(orderCode) {
+  let searchText=`system/products-schedule/list?orderCode=${encodeURIComponent(orderCode)}&includeCompletedOrders=true`
+  return function(pageNum, pageSize, searchContent = {}){
+    let concatText = buildSearchQuery(searchContent)
     return httpInstance({
     url: `${searchText}&pageNum=${pageNum}&pageSize=${pageSize}${concatText}`,
     method: 'get',
@@ -81,11 +84,7 @@ export function deleteSchedule(ids) {
 }
 
 export function listSchedule(pageNum, pageSize, searchContent = {}) {
-  let concatText = Object.keys(searchContent)
-    .map((key) => {
-      return `&${key}=${searchContent[key]}`
-    })
-    .join('')
+  let concatText = buildSearchQuery(searchContent)
   return httpInstance({
     url: `system/products-schedule/list?includeCompletedOrders=false&pageNum=${pageNum}&pageSize=${pageSize}${concatText}`,
     method: 'get',

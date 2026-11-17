@@ -536,7 +536,7 @@ const callSubmit = () => {
     ElMessage.success('批量新增完成')
     newDialogVisible.value = false
     newList.value = []
-    listSchedule(page.value, pageSize.value).then((res) => {
+    listSchedule(page.value, pageSize.value, searchContent.value).then((res) => {
       listData.value = res.rows
       total.value = res.total
     })
@@ -568,7 +568,7 @@ const handleSubmit = () => {
       if (valid) {
         changeSchedule(editSubmit.value).then((res) => {
           page.value = 1
-          listSchedule(page.value, pageSize.value).then((res) => {
+          listSchedule(page.value, pageSize.value, searchContent.value).then((res) => {
             listData.value = res.rows
             total.value = res.total
           })
@@ -586,7 +586,7 @@ const handleSubmit = () => {
       if (valid) {
         newSchedule(newSubmit.value).then((res) => {
           page.value = 1
-          listSchedule(page.value, pageSize.value).then((res) => {
+          listSchedule(page.value, pageSize.value, searchContent.value).then((res) => {
             listData.value = res.rows
             total.value = res.total
           })
@@ -613,7 +613,7 @@ const handleSubmitFromProduct = () => {
 
       newScheduleFromProduct(submitData).then((res) => {
         page.value = 1
-        listSchedule(page.value, pageSize.value).then((res) => {
+        listSchedule(page.value, pageSize.value, searchContent.value).then((res) => {
           listData.value = res.rows
           total.value = res.total
         })
@@ -689,7 +689,7 @@ const handleUpload = async (option: any) => {
     const res = await importFile(formData)
     ElMessage.success(res.msg)
     importDialogVisible.value = false
-    const result = await listSchedule(page.value, pageSize.value)
+    const result = await listSchedule(page.value, pageSize.value, searchContent.value)
     listData.value = result.rows
     total.value = result.total
     return res
@@ -727,7 +727,7 @@ const DeleteFunc = (row) => {
   })
   const func = () => {
     return deleteSchedule(ids).then((res) => {
-      listSchedule(page.value, pageSize.value).then((res) => {
+      listSchedule(page.value, pageSize.value, searchContent.value).then((res) => {
         listData.value = res.rows
         total.value = res.total
       })
@@ -835,20 +835,22 @@ const total = ref(0)
 const listData = ref([])
 const handlePageChange = async (val: number) => {
   page.value = val
-  listSchedule(page.value, pageSize.value).then((res) => {
+  listSchedule(page.value, pageSize.value, searchContent.value).then((res) => {
     listData.value = res.rows
+    total.value = res.total
   })
 }
 const handleSizeChange = async (val: number) => {
   pageSize.value = val
   page.value = 1
-  listSchedule(page.value, pageSize.value).then((res) => {
+  listSchedule(page.value, pageSize.value, searchContent.value).then((res) => {
     listData.value = res.rows
+    total.value = res.total
   })
 }
 
 //初次渲染
-listSchedule(page.value, pageSize.value).then((res) => {
+listSchedule(page.value, pageSize.value, searchContent.value).then((res) => {
 
   total.value = res.total
   listData.value = res.rows
